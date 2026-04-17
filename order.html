@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order | Quincy Fashion World</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --royal-purple: #2d0a31;
+            --deep-purple: #1a0520;
+            --gold: #d4af37;
+            --gold-light: #f4d03f;
+            --white: #ffffff;
+            --cream: #faf8f5;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--deep-purple) 0%, var(--royal-purple) 50%, #4a1a4e 100%);
+            min-height: 100vh;
+            color: var(--white);
+        }
+
+        /* Animated Background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+            box-shadow: 0 0 10px var(--gold);
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(45, 10, 49, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gold);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after,
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        .brand-container {
+            cursor: pointer;
+        }
+
+        .brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .brand-sub {
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            color: var(--gold);
+            opacity: 0.8;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 120px 50px 50px;
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .page-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            color: var(--gold);
+            margin-bottom: 15px;
+        }
+
+        .page-header p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        /* Category Filter */
+        .category-filter {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 12px 30px;
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--gold);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--gold);
+            color: var(--deep-purple);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+        }
+
+        /* Items Grid - Modern Marketplace Style */
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .item-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(212, 175, 55, 0.2);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .item-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--gold);
+            box-shadow: 0 20px 40px rgba(212, 175, 55, 0.2);
+        }
+
+        .item-card.selected {
+            border-color: var(--gold);
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .item-card.selected::after {
+            content: '\\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            background: var(--gold);
+            color: var(--deep-purple);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .item-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .item-card:hover .item-image {
+            transform: scale(1.05);
+        }
+
+        .item-info {
+            padding: 20px;
+        }
+
+        .item-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--gold-light);
+            margin-bottom: 8px;
+        }
+
+        .item-category {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .select-indicator {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .item-card.selected .select-indicator {
+            background: var(--gold);
+            border-color: var(--gold);
+        }
+
+        /* Floating Cart */
+        .floating-cart {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .cart-btn {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            border: none;
+            border-radius: 50%;
+            color: var(--deep-purple);
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cart-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.5);
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 28px;
+            height: 28px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        .proceed-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 18px 50px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            border: none;
+            border-radius: 50px;
+            color: var(--deep-purple);
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+            transition: all 0.3s ease;
+            z-index: 999;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .proceed-btn.visible {
+            display: flex;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .proceed-btn:hover {
+            transform: translateX(-50%) translateY(-3px);
+            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.5);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .empty-state i {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            color: var(--gold);
+            opacity: 0.5;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 40px 0 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .section-header h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+            font-size: 1.8rem;
+        }
+
+        .section-header i {
+            color: var(--gold);
+            font-size: 1.5rem;
+        }
+
+        .item-count {
+            margin-left: auto;
+            background: var(--gold);
+            color: var(--deep-purple);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 100px 20px 30px;
+            }
+
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .items-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 15px;
+            }
+
+            .category-filter {
+                gap: 10px;
+            }
+
+            .filter-btn {
+                padding: 10px 20px;
+                font-size: 0.85rem;
+            }
+
+            nav {
+                padding: 15px 20px;
+            }
+
+            .nav-links {
+                gap: 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+
+    <nav>
+        <div class="brand-container" onclick="goHome()">
+            <div class="brand-name">Quincy Fashion</div>
+            <div class="brand-sub">World</div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="order.html" class="active">Order</a></li>
+            <li><a href="purchase.html">Purchase</a></li>
+        </ul>
+    </nav>
+
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Our Collection</h1>
+            <p>Select items you're interested in and proceed to purchase</p>
+        </div>
+
+        <div class="category-filter">
+            <button class="filter-btn active" onclick="filterItems('all')">All Items</button>
+            <button class="filter-btn" onclick="filterItems('bags')">Female Bags</button>
+            <button class="filter-btn" onclick="filterItems('heels')">Heels</button>
+            <button class="filter-btn" onclick="filterItems('corporate')">Corporate Shoes</button>
+            <button class="filter-btn" onclick="filterItems('slides')">Slides</button>
+            <button class="filter-btn" onclick="filterItems('sneakers')">Sneakers</button>
+        </div>
+
+        <!-- Available Items Section - Shows Admin Uploaded Items -->
+        <div id="availableItemsSection">
+            <div class="section-header">
+                <i class="fas fa-sparkles"></i>
+                <h2>Available Items</h2>
+                <span class="item-count" id="availableCount">0 items</span>
+            </div>
+            <div class="items-grid" id="itemsGrid">
+                <!-- Dynamically populated from localStorage -->
+            </div>
+        </div>
+    </div>
+
+    <button class="proceed-btn" id="proceedBtn" onclick="proceedToPurchase()">
+        <span>Proceed to Purchase</span>
+        <i class="fas fa-arrow-right"></i>
+    </button>
+
+    <div class="floating-cart">
+        <button class="cart-btn" onclick="proceedToPurchase()">
+            <i class="fas fa-shopping-bag"></i>
+            <span class="cart-count" id="cartCount">0</span>
+        </button>
+    </div>
+
+    <script>
+        // Create stars
+        function createStars() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(star);
+            }
+        }
+        createStars();
+
+        let selectedItems = JSON.parse(localStorage.getItem('selectedItems') || '[]');
+        let currentFilter = 'all';
+
+        // Load items from localStorage (uploaded by admin)
+        function loadItems() {
+            const items = JSON.parse(localStorage.getItem('fashionItems') || '[]');
+            const grid = document.getElementById('itemsGrid');
+            const section = document.getElementById('availableItemsSection');
+            
+            document.getElementById('availableCount').textContent = items.length + ' items';
+            
+            if (items.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <i class="fas fa-box-open"></i>
+                        <h3>No items available</h3>
+                        <p>New arrivals coming soon!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Filter items if needed
+            const filteredItems = currentFilter === 'all' 
+                ? items 
+                : items.filter(item => item.category === currentFilter || !item.category);
+
+            grid.innerHTML = filteredItems.map(item => `
+                <div class="item-card ${isSelected(item.id) ? 'selected' : ''}" 
+                     onclick="toggleItem('${item.id}', '${item.name}', '${item.image}', '${item.category || 'general'}')"
+                     data-category="${item.category || 'general'}">
+                    <div class="select-indicator"></div>
+                    <img src="${item.image}" alt="${item.name}" class="item-image">
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-category">${item.category || 'New Arrival'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function isSelected(id) {
+            return selectedItems.some(item => item.id === id);
+        }
+
+        function toggleItem(id, name, image, category) {
+            const index = selectedItems.findIndex(item => item.id === id);
+            
+            if (index > -1) {
+                selectedItems.splice(index, 1);
+            } else {
+                selectedItems.push({ id, name, image, category });
+            }
+            
+            localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
+            updateUI();
+        }
+
+        function updateUI() {
+            // Update all cards
+            document.querySelectorAll('.item-card').forEach(card => {
+                const onclickStr = card.getAttribute('onclick');
+                const idMatch = onclickStr.match(/'([^']+)'/);
+                if (idMatch) {
+                    const id = idMatch[1];
+                    if (isSelected(id)) {
+                        card.classList.add('selected');
+                    } else {
+                        card.classList.remove('selected');
+                    }
+                }
+            });
+
+            // Update cart count
+            document.getElementById('cartCount').textContent = selectedItems.length;
+            
+            // Show/hide proceed button
+            const proceedBtn = document.getElementById('proceedBtn');
+            if (selectedItems.length > 0) {
+                proceedBtn.classList.add('visible');
+            } else {
+                proceedBtn.classList.remove('visible');
+            }
+        }
+
+        function filterItems(category) {
+            currentFilter = category;
+            
+            // Update buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            loadItems();
+            updateUI();
+        }
+
+        function proceedToPurchase() {
+            if (selectedItems.length === 0) {
+                alert('Please select at least one item');
+                return;
+            }
+            window.location.href = 'purchase.html';
+        }
+
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        // Initialize
+        loadItems();
+        updateUI();
+        
+        // Listen for storage changes (in case admin updates items)
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'fashionItems') {
+                loadItems();
+                updateUI();
+            }
+        });
+    </script>
+</body>
+</html>
