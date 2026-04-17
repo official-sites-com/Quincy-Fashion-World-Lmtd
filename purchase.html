@@ -244,13 +244,6 @@
             text-transform: uppercase;
         }
 
-        .selected-item-price {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--gold);
-            margin-top: 3px;
-        }
-
         .remove-btn {
             width: 35px;
             height: 35px;
@@ -796,9 +789,29 @@
             localStorage.setItem('purchases', JSON.stringify(purchases));
         }
 
+        // Clean up selected items - remove any that no longer exist in available items
+        function cleanupSelectedItems() {
+            const availableItems = JSON.parse(localStorage.getItem('fashionItems') || '[]');
+            const availableIds = availableItems.map(item => item.id);
+
+            let selectedItems = JSON.parse(localStorage.getItem('selectedItems') || '[]');
+            const originalCount = selectedItems.length;
+
+            // Remove selected items that no longer exist
+            selectedItems = selectedItems.filter(item => availableIds.includes(item.id));
+
+            if (selectedItems.length !== originalCount) {
+                localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
+                console.log(`Removed ${originalCount - selectedItems.length} deleted items from cart`);
+            }
+
+            return selectedItems;
+        }
+
         // Load selected items
         function loadSelectedItems() {
-            const items = JSON.parse(localStorage.getItem('selectedItems') || '[]');
+            // First clean up any deleted items
+            const items = cleanupSelectedItems();
             const container = document.getElementById('selectedItems');
 
             if (items.length === 0) {
@@ -811,6 +824,13 @@
                         </a>
                     </div>
                 `;
+                // Disable WhatsApp button when no items
+                const whatsappBtn = document.getElementById('whatsappBtn');
+                whatsappBtn.href = '#';
+                whatsappBtn.onclick = function(e) {
+                    e.preventDefault();
+                    alert('Please select at least one item to purchase.');
+                };
                 return;
             }
 
@@ -820,7 +840,6 @@
                     <div class="selected-item-info">
                         <div class="selected-item-name">${item.name}</div>
                         <div class="selected-item-category">${item.category}</div>
-                        ${item.price ? `<div class="selected-item-price">₦${Number(item.price).toLocaleString()}</div>` : ''}
                     </div>
                     <button class="remove-btn" onclick="removeItem(${index})">
                         <i class="fas fa-times"></i>
@@ -833,28 +852,12 @@
         }
 
         function updateWhatsAppLink(items) {
+            const itemList = items.map(item => `- ${item.name}`).join('%0A');
+            const message = `Hello Quincy Fashion World!%0A%0AI would like to purchase the following items:%0A${itemList}%0A%0APlease provide me with pricing and delivery details.`;
             const whatsappBtn = document.getElementById('whatsappBtn');
-            
-            let message = `Hello Quincy Fashion World!%0A%0AI would like to purchase the following items:%0A%0A`;
-            
-            items.forEach((item, index) => {
-                message += `*Item ${index + 1}:*%0A`;
-                message += `📦 Name: ${item.name}%0A`;
-                message += `🏷️ Type: ${item.category || 'General'}%0A`;
-                if (item.price) {
-                    message += `💰 Price: ₦${Number(item.price).toLocaleString()}%0A`;
-                }
-                if (item.about) {
-                    message += `📝 Description: ${item.about}%0A`;
-                }
-                message += `%0A`;
-            });
-            
-            message += `Total Items: ${items.length}%0A`;
-            message += `%0APlease provide me with delivery details and confirm availability.`;
-            
             whatsappBtn.href = `https://wa.me/2348144967122?text=${message}`;
             
+            // Add click tracking
             whatsappBtn.onclick = function() {
                 trackPurchase();
             };
