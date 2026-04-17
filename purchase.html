@@ -244,6 +244,13 @@
             text-transform: uppercase;
         }
 
+        .selected-item-price {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-top: 3px;
+        }
+
         .remove-btn {
             width: 35px;
             height: 35px;
@@ -813,6 +820,7 @@
                     <div class="selected-item-info">
                         <div class="selected-item-name">${item.name}</div>
                         <div class="selected-item-category">${item.category}</div>
+                        ${item.price ? `<div class="selected-item-price">₦${Number(item.price).toLocaleString()}</div>` : ''}
                     </div>
                     <button class="remove-btn" onclick="removeItem(${index})">
                         <i class="fas fa-times"></i>
@@ -825,9 +833,28 @@
         }
 
         function updateWhatsAppLink(items) {
-            const itemList = items.map(item => `- ${item.name}`).join('%0A');
-            const message = `Hello Quincy Fashion World!%0A%0AI would like to purchase the following items:%0A${itemList}%0A%0APlease provide me with pricing and delivery details.`;
             const whatsappBtn = document.getElementById('whatsappBtn');
+            
+            // Build detailed message with all item info
+            let message = `Hello Quincy Fashion World!%0A%0AI would like to purchase the following items:%0A%0A`;
+            
+            items.forEach((item, index) => {
+                message += `*Item ${index + 1}:*%0A`;
+                message += `📦 Name: ${item.name}%0A`;
+                message += `🏷️ Category: ${item.category || 'General'}%0A`;
+                if (item.price) {
+                    message += `💰 Price: ₦${Number(item.price).toLocaleString()}%0A`;
+                }
+                if (item.about) {
+                    message += `📝 Description: ${item.about}%0A`;
+                }
+                message += `📸 Image: ${item.image}%0A`;
+                message += `%0A`;
+            });
+            
+            message += `%0ATotal Items: ${items.length}%0A`;
+            message += `%0APlease provide me with delivery details and confirm availability.`;
+            
             whatsappBtn.href = `https://wa.me/2348144967122?text=${message}`;
             
             // Add click tracking
