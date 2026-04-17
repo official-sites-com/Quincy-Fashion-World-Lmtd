@@ -835,29 +835,26 @@
         function updateWhatsAppLink(items) {
             const whatsappBtn = document.getElementById('whatsappBtn');
             
-            // Build detailed message with all item info
             let message = `Hello Quincy Fashion World!%0A%0AI would like to purchase the following items:%0A%0A`;
             
             items.forEach((item, index) => {
                 message += `*Item ${index + 1}:*%0A`;
                 message += `📦 Name: ${item.name}%0A`;
-                message += `🏷️ Category: ${item.category || 'General'}%0A`;
+                message += `🏷️ Type: ${item.category || 'General'}%0A`;
                 if (item.price) {
                     message += `💰 Price: ₦${Number(item.price).toLocaleString()}%0A`;
                 }
                 if (item.about) {
                     message += `📝 Description: ${item.about}%0A`;
                 }
-                message += `📸 Image: ${item.image}%0A`;
                 message += `%0A`;
             });
             
-            message += `%0ATotal Items: ${items.length}%0A`;
+            message += `Total Items: ${items.length}%0A`;
             message += `%0APlease provide me with delivery details and confirm availability.`;
             
             whatsappBtn.href = `https://wa.me/2348144967122?text=${message}`;
             
-            // Add click tracking
             whatsappBtn.onclick = function() {
                 trackPurchase();
             };
