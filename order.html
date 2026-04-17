@@ -211,7 +211,7 @@
         }
 
         .item-card.selected::after {
-            content: '\\f00c';
+            content: '\f00c';
             font-family: 'Font Awesome 6 Free';
             font-weight: 900;
             position: absolute;
@@ -262,6 +262,24 @@
             color: rgba(255, 255, 255, 0.6);
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        .item-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-top: 8px;
+        }
+
+        .item-desc {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .select-indicator {
@@ -560,6 +578,8 @@
                     <div class="item-info">
                         <div class="item-name">${item.name}</div>
                         <div class="item-category">${item.category || 'New Arrival'}</div>
+                        ${item.price ? `<div class="item-price">₦${item.price.toLocaleString()}</div>` : ''}
+                        ${item.about ? `<div class="item-desc">${item.about}</div>` : ''}
                     </div>
                 </div>
             `).join('');
