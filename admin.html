@@ -151,70 +151,138 @@
         <div id="reviewsSection" class="section"><div id="reviewsList"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading reviews...</p></div></div></div>
     </div>
     <div id="toast" class="toast"><i class="fas fa-check-circle"></i><span id="toastMessage">Action Successful!</span></div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs, writeBatch, updateDoc, getDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
+
         const firebaseConfig = { apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw", authDomain: "quincy-fashion-world.firebaseapp.com", projectId: "quincy-fashion-world", storageBucket: "quincy-fashion-world.firebasestorage.app", messagingSenderId: "902712490347", appId: "1:902712490347:web:101d4882d7f1781df1f42e" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         enableIndexedDbPersistence(db).catch(err => { debugLog('Persistence error: ' + err.code, 'error'); });
-        
-        const CLOUDINARY_CONFIG = { cloudName: 'dyesrp8ye', uploadPreset: 'quincy_fashion_preset', folder: 'quincy_fashion/products' };
-        
+
+        const CLOUDINARY_CONFIG = { cloudName: 'dyesrp8ye', uploadPreset: 'quincy_fashion_preset' };
+
         let debugMode = false;
         const debugOutput = document.getElementById('debugOutput');
         window.toggleDebug = function() { debugMode = !debugMode; document.getElementById('debugConsole').classList.toggle('active'); debugLog('Debug mode ' + (debugMode ? 'enabled' : 'disabled'), 'info'); };
-        function debugLog(message, type = 'info') { const line = document.createElement('div'); line.className = 'debug-line ' + type; line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message; debugOutput.appendChild(line); debugOutput.scrollTop = debugOutput.scrollHeight; if (debugMode) console.log('[' + type.toUpperCase() + '] ' + message); }
-        
-        function checkAuth() { const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true'; const adminUser = localStorage.getItem('adminUser'); if (!isLoggedIn || !adminUser) { window.location.href = 'index.html'; return false; } const validCredentials = { '07044696807': 'QuincyFW', '08144967122': 'QuincyFW' }; if (!validCredentials[adminUser]) { logout(); return false; } const loginTime = parseInt(localStorage.getItem('adminLoginTime') || '0'); if (Date.now() - loginTime > 24 * 60 * 60 * 1000) { logout(); return false; } document.getElementById('adminUser').textContent = 'Admin: ' + adminUser; return true; }
+        function debugLog(message, type) { type = type || 'info'; const line = document.createElement('div'); line.className = 'debug-line ' + type; line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message; debugOutput.appendChild(line); debugOutput.scrollTop = debugOutput.scrollHeight; if (debugMode) console.log('[' + type.toUpperCase() + '] ' + message); }
+
+        function checkAuth() { const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true'; const adminUser = localStorage.getItem('adminUser'); if (!isLoggedIn || !adminUser) { window.location.href = 'index.html'; return false; } const validCredentials = { '07044696807': 'QuincyFW', '08144967122': 'QuincyFW' }; if (!validCredentials[adminUser]) { logout(); return false; } const loginTime = parseInt(localStorage.getItem('adminLoginTime') || '0'); if (Date.now() - loginTime > 86400000) { logout(); return false; } document.getElementById('adminUser').textContent = 'Admin: ' + adminUser; return true; }
         window.logout = function() { localStorage.removeItem('adminLoggedIn'); localStorage.removeItem('adminUser'); localStorage.removeItem('adminLoginTime'); window.location.href = 'index.html'; };
-        
+
         async function uploadToCloudinary(file, slotNum) {
             debugLog('Slot ' + slotNum + ': Starting upload...', 'info');
             debugLog('Slot ' + slotNum + ': File: ' + file.name + ', Size: ' + (file.size/1024).toFixed(1) + 'KB, Type: ' + file.type, 'info');
-            if (file.size > 10 * 1024 * 1024) throw new Error('File too large. Maximum is 10MB. Your file is ' + (file.size/1024/1024).toFixed(1) + 'MB');
+            if (file.size > 10 * 1024 * 1024) throw new Error('File too large. Max 10MB. Your file is ' + (file.size/1024/1024).toFixed(1) + 'MB');
             const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-            if (!allowedTypes.includes(file.type)) throw new Error('Invalid file type: ' + file.type + '. Allowed: JPG, PNG, WebP');
+            if (!allowedTypes.includes(file.type)) throw new Error('Invalid file type: ' + file.type + '. Use JPG, PNG, or WebP');
+
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
-            formData.append('folder', CLOUDINARY_CONFIG.folder);
-            formData.append('tags', 'quincy_product,admin_upload');
+            // NOTE: For UNSIGNED uploads, do NOT add 'folder' or 'tags' here.
+            // Those must be configured in the Cloudinary preset settings instead.
+
             const url = 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CONFIG.cloudName + '/image/upload';
-            debugLog('Slot ' + slotNum + ': Uploading to ' + url, 'info');
+            debugLog('Slot ' + slotNum + ': POST ' + url, 'info');
+
             try {
                 const response = await fetch(url, { method: 'POST', body: formData });
-                debugLog('Slot ' + slotNum + ': Response status: ' + response.status, 'info');
+                debugLog('Slot ' + slotNum + ': Response status ' + response.status, 'info');
                 const data = await response.json();
+
                 if (!response.ok) {
                     debugLog('Slot ' + slotNum + ': Cloudinary error: ' + JSON.stringify(data), 'error');
                     if (data.error) {
-                        const errorMsg = data.error.message || 'Unknown Cloudinary error';
-                        if (errorMsg.includes('Upload preset')) throw new Error('Upload preset "' + CLOUDINARY_CONFIG.uploadPreset + '" not found. Create it in Cloudinary dashboard (Settings > Upload > Add Upload Preset, set to UNSIGNED).');
-                        if (errorMsg.includes('Invalid signature') || errorMsg.includes('Signature')) throw new Error('Upload preset must be UNSIGNED. Go to Cloudinary Settings > Upload and change signing mode.');
-                        if (errorMsg.includes('Cloud name')) throw new Error('Cloud name "' + CLOUDINARY_CONFIG.cloudName + '" not found. Check your Cloudinary dashboard.');
-                        throw new Error('Cloudinary: ' + errorMsg);
+                        const msg = data.error.message || 'Unknown error';
+                        if (msg.indexOf('Upload preset') > -1) throw new Error('Preset "' + CLOUDINARY_CONFIG.uploadPreset + '" not found. Create it in Cloudinary Settings > Upload.');
+                        if (msg.indexOf('whitelisted') > -1 || msg.indexOf('unsigned') > -1) throw new Error('Preset must be UNSIGNED. Go to Cloudinary Settings > Upload > Edit preset > Signing Mode = UNSIGNED.');
+                        if (msg.indexOf('Cloud name') > -1) throw new Error('Cloud name "' + CLOUDINARY_CONFIG.cloudName + '" not found.');
+                        throw new Error('Cloudinary: ' + msg);
                     }
-                    throw new Error('Upload failed with status ' + response.status);
+                    throw new Error('Upload failed (status ' + response.status + ')');
                 }
-                debugLog('Slot ' + slotNum + ': Upload successful! Public ID: ' + data.public_id, 'success');
-                return { url: data.secure_url, publicId: data.public_id, thumbnailUrl: data.secure_url.replace('/upload/', '/upload/w_400,h_400,c_fill/'), format: data.format, width: data.width, height: data.height, bytes: data.bytes, originalFilename: data.original_filename };
-            } catch (error) { debugLog('Slot ' + slotNum + ': Upload error: ' + error.message, 'error'); throw error; }
+
+                debugLog('Slot ' + slotNum + ': SUCCESS! Public ID: ' + data.public_id, 'success');
+                return {
+                    url: data.secure_url,
+                    publicId: data.public_id,
+                    thumbnailUrl: data.secure_url.replace('/upload/', '/upload/w_400,h_400,c_fill/')
+                };
+            } catch (error) {
+                debugLog('Slot ' + slotNum + ': ERROR: ' + error.message, 'error');
+                throw error;
+            }
         }
+
+        // GENERATE 10 UPLOAD SLOTS
         const uploadGrid = document.getElementById('uploadGrid');
         const categories = ['bags', 'heels', 'corporate', 'slides', 'sneakers', 'general'];
+
         for (let i = 1; i <= 10; i++) {
             const slot = document.createElement('div');
             slot.className = 'upload-card';
-            slot.innerHTML = '<h3><i class="fas fa-image"></i> Upload Slot ' + i + '</h3><div class="preview-box" id="preview' + i + '"><i class="fas fa-cloud-upload-alt"></i></div><div class="file-input-wrapper"><input type="file" id="file' + i + '" accept="image/jpeg,image/png,image/webp" onchange="previewImage(' + i + ')" style="display:none;"><button class="btn btn-outline" onclick="document.getElementById(\'file' + i + '\').click()" style="width:100%; margin-bottom:12px;"><i class="fas fa-folder-open"></i> Select Image</button><div id="fileName' + i + '" style="font-size:0.85rem; color:rgba(255,255,255,0.6); margin-bottom:10px;"></div></div><input type="text" id="name' + i + '" placeholder="Item Name *" required><input type="number" id="price' + i + '" placeholder="Price (₦) *" required min="0"><select id="category' + i + '" class="category-select"><option value="">Select Category</option>' + categories.map(c => '<option value="' + c + '">' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>').join('') + '</select><textarea id="about' + i + '" placeholder="Product Description" rows="3"></textarea><div class="schedule-group"><label><input type="checkbox" id="schedCheck' + i + '" onchange="toggleSchedule(' + i + ')"><span>Schedule Auto-Delete</span></label><input type="datetime-local" id="schedTime' + i + '" disabled style="margin-top:10px;"></div><button class="upload-btn" id="uploadBtn' + i + '" onclick="uploadItem(' + i + ')"><i class="fas fa-upload"></i> Upload Item</button>';
+            slot.innerHTML = '<h3><i class="fas fa-image"></i> Upload Slot ' + i + '</h3>' +
+                '<div class="preview-box" id="preview' + i + '"><i class="fas fa-cloud-upload-alt"></i></div>' +
+                '<div class="file-input-wrapper">' +
+                '<input type="file" id="file' + i + '" accept="image/jpeg,image/png,image/webp" onchange="previewImage(' + i + ')" style="display:none;">' +
+                '<button class="btn btn-outline" onclick="document.getElementById(\'file' + i + '\').click()" style="width:100%; margin-bottom:12px;">' +
+                '<i class="fas fa-folder-open"></i> Select Image</button>' +
+                '<div id="fileName' + i + '" style="font-size:0.85rem; color:rgba(255,255,255,0.6); margin-bottom:10px;"></div></div>' +
+                '<input type="text" id="name' + i + '" placeholder="Item Name *" required>' +
+                '<input type="number" id="price' + i + '" placeholder="Price (N) *" required min="0">' +
+                '<select id="category' + i + '" class="category-select">' +
+                '<option value="">Select Category</option>' +
+                categories.map(c => '<option value="' + c + '">' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>').join('') +
+                '</select>' +
+                '<textarea id="about' + i + '" placeholder="Product Description" rows="3"></textarea>' +
+                '<div class="schedule-group"><label><input type="checkbox" id="schedCheck' + i + '" onchange="toggleSchedule(' + i + ')">' +
+                '<span>Schedule Auto-Delete</span></label>' +
+                '<input type="datetime-local" id="schedTime' + i + '" disabled style="margin-top:10px;"></div>' +
+                '<button class="upload-btn" id="uploadBtn' + i + '" onclick="uploadItem(' + i + ')">' +
+                '<i class="fas fa-upload"></i> Upload Item</button>';
             uploadGrid.appendChild(slot);
         }
-        
-        window.toggleSchedule = function(slot) { const checkbox = document.getElementById('schedCheck' + slot); const datetime = document.getElementById('schedTime' + slot); datetime.disabled = !checkbox.checked; if (checkbox.checked) { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); datetime.min = now.toISOString().slice(0,16); } };
-        window.showSection = function(id) { document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active')); document.getElementById(id + 'Section').classList.add('active'); event.target.classList.add('active'); if (id === 'manage') { currentManageFilter = 'all'; renderItemsList(); } if (id === 'reviews') loadReviews(); if (id === 'upload') updateStats(); };
-        window.previewImage = function(slot) { const file = document.getElementById('file' + slot).files[0]; const preview = document.getElementById('preview' + slot); const fileName = document.getElementById('fileName' + slot); if (file) { const reader = new FileReader(); reader.onload = (e) => { preview.innerHTML = '<img src="' + e.target.result + '">'; preview.classList.add('has-image'); }; reader.readAsDataURL(file); fileName.textContent = '📄 ' + file.name + ' (' + (file.size/1024).toFixed(1) + 'KB)'; } };
-        
+        debugLog('Generated 10 upload slots', 'success');
+
+        window.toggleSchedule = function(slot) {
+            const checkbox = document.getElementById('schedCheck' + slot);
+            const datetime = document.getElementById('schedTime' + slot);
+            datetime.disabled = !checkbox.checked;
+            if (checkbox.checked) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                datetime.min = now.toISOString().slice(0, 16);
+            }
+        };
+
+        window.showSection = function(id) {
+            document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
+            document.querySelectorAll('.nav-tabs button').forEach(function(b) { b.classList.remove('active'); });
+            document.getElementById(id + 'Section').classList.add('active');
+            event.target.classList.add('active');
+            if (id === 'manage') { currentManageFilter = 'all'; renderItemsList(); }
+            if (id === 'reviews') loadReviews();
+            if (id === 'upload') updateStats();
+        };
+
+        window.previewImage = function(slot) {
+            const fileInput = document.getElementById('file' + slot);
+            const file = fileInput.files[0];
+            const preview = document.getElementById('preview' + slot);
+            const fileName = document.getElementById('fileName' + slot);
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = '<img src="' + e.target.result + '">';
+                    preview.classList.add('has-image');
+                };
+                reader.readAsDataURL(file);
+                fileName.textContent = '\u{1F4C4} ' + file.name + ' (' + (file.size / 1024).toFixed(1) + 'KB)';
+            }
+        };
+
         window.uploadItem = async function(slot) {
             const fileInput = document.getElementById('file' + slot);
             const file = fileInput.files[0];
@@ -224,31 +292,67 @@
             const about = document.getElementById('about' + slot).value.trim();
             const schedCheck = document.getElementById('schedCheck' + slot).checked;
             const schedTime = document.getElementById('schedTime' + slot).value;
-            if (!file) { showToast('Please selectPlease select an image file', 'error'); return; }
+
+            if (!file) { showToast('Please select an image file', 'error'); return; }
             if (!name) { showToast('Please enter item name', 'error'); return; }
             if (!price || price <= 0) { showToast('Please enter a valid price', 'error'); return; }
             if (!category) { showToast('Please select a category', 'error'); return; }
+
             const btn = document.getElementById('uploadBtn' + slot);
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Uploading...';
+
             try {
                 debugLog('Slot ' + slot + ': Starting upload process...', 'info');
                 const cloudinaryData = await uploadToCloudinary(file, slot);
-                debugLog('Slot ' + slot + ': Cloudinary upload complete', 'success');
-                const itemData = { name: name, price: parseFloat(price), category: category, about: about, imageUrl: cloudinaryData.url, imagePublicId: cloudinaryData.publicId, thumbnailUrl: cloudinaryData.thumbnailUrl, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), scheduledDelete: schedCheck ? new Date(schedTime) : null, isActive: true, deleted: false, deletedAt: null, uploadSlot: slot };
-                debugLog('Slot ' + slot + ': Saving to Firestore...', 'info');
+                debugLog('Slot ' + slot + ': Cloudinary OK, saving to Firestore...', 'info');
+
+                const itemData = {
+                    name: name,
+                    price: parseFloat(price),
+                    category: category,
+                    about: about,
+                    imageUrl: cloudinaryData.url,
+                    imagePublicId: cloudinaryData.publicId,
+                    thumbnailUrl: cloudinaryData.thumbnailUrl,
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp(),
+                    scheduledDelete: schedCheck ? new Date(schedTime) : null,
+                    isActive: true,
+                    deleted: false,
+                    deletedAt: null
+                };
+
                 const docRef = await addDoc(collection(db, 'items'), itemData);
-                debugLog('Slot ' + slot + ': Firestore save complete. ID: ' + docRef.id, 'success');
-                fileInput.value = ''; document.getElementById('name' + slot).value = ''; document.getElementById('price' + slot).value = ''; document.getElementById('category' + slot).value = ''; document.getElementById('about' + slot).value = ''; document.getElementById('schedCheck' + slot).checked = false; document.getElementById('schedTime' + slot).value = ''; document.getElementById('schedTime' + slot).disabled = true; document.getElementById('preview' + slot).innerHTML = '<i class="fas fa-cloud-upload-alt"></i>'; document.getElementById('preview' + slot).classList.remove('has-image'); document.getElementById('fileName' + slot).textContent = '';
-                showToast('✅ "' + name + '" uploaded successfully!');
+                debugLog('Slot ' + slot + ': Firestore saved! ID: ' + docRef.id, 'success');
+
+                fileInput.value = '';
+                document.getElementById('name' + slot).value = '';
+                document.getElementById('price' + slot).value = '';
+                document.getElementById('category' + slot).value = '';
+                document.getElementById('about' + slot).value = '';
+                document.getElementById('schedCheck' + slot).checked = false;
+                document.getElementById('schedTime' + slot).value = '';
+                document.getElementById('schedTime' + slot).disabled = true;
+                document.getElementById('preview' + slot).innerHTML = '<i class="fas fa-cloud-upload-alt"></i>';
+                document.getElementById('preview' + slot).classList.remove('has-image');
+                document.getElementById('fileName' + slot).textContent = '';
+
+                showToast('\u2705 "' + name + '" uploaded successfully!');
                 updateStats();
-            } catch (error) { debugLog('Slot ' + slot + ': Final error: ' + error.message, 'error'); showToast('❌ Upload failed: ' + error.message, 'error'); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> Upload Item'; }
+            } catch (error) {
+                debugLog('Slot ' + slot + ': FAILED: ' + error.message, 'error');
+                showToast('\u274C Upload failed: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-upload"></i> Upload Item';
+            }
         };
-        
+
         let itemsUnsubscribe = null;
         let allItems = [];
         let currentManageFilter = 'all';
-        
+
         function subscribeToItems() {
             debugLog('Starting real-time items subscription...', 'info');
             const q = query(collection(db, 'items'), orderBy('createdAt', 'desc'));
@@ -261,9 +365,9 @@
                 checkScheduledDeletions();
             }, (error) => { debugLog('Items listener error: ' + error.message, 'error'); showToast('Error loading items. Please refresh.', 'error'); });
         }
-        
+
         window.filterItems = function(filterType) { currentManageFilter = filterType; renderItemsList(); };
-        
+
         function renderItemsList() {
             const container = document.getElementById('itemsList');
             const now = new Date();
@@ -273,20 +377,20 @@
             else if (currentManageFilter === 'expired') filteredItems = allItems.filter(i => { if (!i.scheduledDelete || i.deleted) return false; const deleteDate = i.scheduledDelete.toDate ? i.scheduledDelete.toDate() : new Date(i.scheduledDelete); return deleteDate <= now; });
             if (filteredItems.length === 0) { container.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><i class="fas fa-box-open"></i><h3>No items found</h3><p>' + (currentManageFilter === 'all' ? 'Upload your first item!' : 'No items in this category') + '</p></div>'; return; }
             container.innerHTML = filteredItems.map(item => {
-                const isExpired = item.scheduledDelete && !i.deleted ? (item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete)) <= now : false;
+                const isExpired = item.scheduledDelete && !item.deleted ? (item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete)) <= now : false;
                 let statusClass = 'status-active'; let statusText = 'Active';
                 if (item.deleted) { statusClass = 'status-expired'; statusText = 'Deleted'; }
                 else if (isExpired) { statusClass = 'status-expired'; statusText = 'Expired'; }
                 else if (item.scheduledDelete) { statusClass = 'status-scheduled'; statusText = 'Scheduled'; }
                 const scheduleText = item.scheduledDelete ? '<div class="item-scheduled"><i class="fas fa-clock"></i>' + (isExpired ? 'Expired: ' : 'Deletes: ') + (item.scheduledDelete.toDate ? item.scheduledDelete.toDate().toLocaleString() : new Date(item.scheduledDelete).toLocaleString()) + '</div>' : '';
-                return '<div class="item-card" style="' + (item.deleted ? 'opacity:0.5;' : '') + '"><img src="' + (item.thumbnailUrl || item.imageUrl) + '" alt="' + item.name + '" loading="lazy" onerror="this.src=\'' + item.imageUrl + '\'"><div class="item-info"><span + '\'"><div class="item-info"><span class="item-status ' + statusClass + '">' + statusText + '</span><div class="item-name">' + item.name + '</div><div class="item-price">₦' + (item.price?.toLocaleString() || '0') + '</div>' + (item.about ? '<div class="item-desc">' + item.about + '</div>' : '') + scheduleText + '<button class="delete-btn" onclick="deleteItem(\\'' + item.id + '\\', \\'' + (item.imagePublicId || '') + '\\')" ' + (item.deleted ? 'disabled' : '') + '><i class="fas fa-trash"></i> ' + (item.deleted ? 'Deleted' : 'Delete Item') + '</button></div></div>';
+                return '<div class="item-card" style="' + (item.deleted ? 'opacity:0.5;' : '') + '"><img src="' + (item.thumbnailUrl || item.imageUrl) + '" alt="' + item.name + '" loading="lazy" onerror="this.src=\'' + item.imageUrl + '\'"><div class="item-info"><span class="item-status ' + statusClass + '">' + statusText + '</span><div class="item-name">' + item.name + '</div><div class="item-price">N' + (item.price ? item.price.toLocaleString() : '0') + '</div>' + (item.about ? '<div class="item-desc">' + item.about + '</div>' : '') + scheduleText + '<button class="delete-btn" onclick="deleteItem(\'' + item.id + '\', \'' + (item.imagePublicId || '') + '\')" ' + (item.deleted ? 'disabled' : '') + '><i class="fas fa-trash"></i> ' + (item.deleted ? 'Deleted' : 'Delete Item') + '</button></div></div>';
             }).join('');
         }
-        
+
         window.loadItems = function() { renderItemsList(); };
-        
+
         window.deleteItem = async function(id, publicId) {
-            if (!confirm('Are you sure you want to delete this item?\\n\\nThis will:\\n1. Remove it from customer carts\\n2. Delete the image from Cloudinary\\n3. Mark as deleted in database')) return;
+            if (!confirm('Are you sure you want to delete this item?\n\nThis will:\n1. Remove it from customer carts\n2. Delete the image from Cloudinary\n3. Mark as deleted in database')) return;
             const item = allItems.find(i => i.id === id);
             if (!item) return;
             debugLog('Deleting item ' + id + ' (Public ID: ' + publicId + ')...', 'info');
@@ -295,10 +399,11 @@
                 debugLog('Firestore soft delete complete', 'success');
                 await addDoc(collection(db, 'deletionLogs'), { itemId: id, itemName: item.name, deletedAt: serverTimestamp(), type: 'manual', adminUser: localStorage.getItem('adminUser') });
                 if (publicId) { debugLog('Image marked for deletion (requires backend cleanup)', 'info'); }
-                showToast('✅ Item deleted successfully');
+                showToast('\u2705 Item deleted successfully');
                 updateStats();
-            } catch (error) { debugLog('Delete error: ' + error.message, 'error'); showToast('❌ Delete failed: ' + error.message, 'error'); }
+            } catch (error) { debugLog('Delete error: ' + error.message, 'error'); showToast('\u274C Delete failed: ' + error.message, 'error'); }
         };
+
         let reviewsUnsubscribe = null;
         window.loadReviews = function() {
             const container = document.getElementById('reviewsList');
@@ -308,13 +413,13 @@
                 const reviews = [];
                 snapshot.forEach((doc) => { reviews.push({ id: doc.id, ...doc.data() }); });
                 document.getElementById('totalReviews').textContent = reviews.length;
-                if (reviews.length === 0) { container.innerHTML = '<div class="empty-state"><i class=""><i class="fas fa-comment-slash"></i><h3>No reviews yet</h3></div>'; return; }
-                container.innerHTML = reviews.map((r) => { const date = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : r.date || 'Recently'; return '<div class="review-card"><div class="review-content"><div class="review-header"><span class="review-name"><i class="fas fa-user-circle"></i> ' + r.name + '</span><span class="review-date">' + date + '</span></div><p class="review-text">' + r.text + '</p></div><button class="delete-review-btn" onclick="deleteReview(\\'' + r.id + '\\')"><i class="fas fa-trash"></i> Delete</button></div>'; }).join('');
+                if (reviews.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-comment-slash"></i><h3>No reviews yet</h3></div>'; return; }
+                container.innerHTML = reviews.map((r) => { const date = r.createdAt && r.createdAt.toDate ? r.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : r.date || 'Recently'; return '<div class="review-card"><div class="review-content"><div class="review-header"><span class="review-name"><i class="fas fa-user-circle"></i> ' + r.name + '</span><span class="review-date">' + date + '</span></div><p class="review-text">' + r.text + '</p></div><button class="delete-review-btn" onclick="deleteReview(\'' + r.id + '\')"><i class="fas fa-trash"></i> Delete</button></div>'; }).join('');
             }, (error) => { debugLog('Reviews listener error: ' + error.message, 'error'); });
         };
-        
+
         window.deleteReview = async function(id) { if (!confirm('Delete this review?')) return; try { await deleteDoc(doc(db, 'reviews', id)); showToast('Review deleted'); updateStats(); } catch (error) { debugLog('Delete review error: ' + error.message, 'error'); showToast('Failed to delete review', 'error'); } };
-        
+
         let purchasesUnsubscribe = null;
         function updateStats() {
             const now = new Date();
@@ -324,7 +429,7 @@
             document.getElementById('scheduledDeletes').textContent = scheduledItems.length;
             updateNotifications();
         }
-        
+
         function updateNotifications() {
             const now = new Date();
             const pList = document.getElementById('purchaseNotifs');
@@ -333,11 +438,11 @@
             const q = query(collection(db, 'purchases'), orderBy('timestamp', 'desc'));
             purchasesUnsubscribe = onSnapshot(q, (snapshot) => {
                 const todayPurchases = [];
-                snapshot.forEach((doc) => { const p = doc.data(); const pDate = p.timestamp?.toDate ? p.timestamp.toDate() : new Date(p.timestamp); if (pDate >= todayStart) todayPurchases.push(p); });
+                snapshot.forEach((doc) => { const p = doc.data(); const pDate = p.timestamp && p.timestamp.toDate ? p.timestamp.toDate() : new Date(p.timestamp); if (pDate >= todayStart) todayPurchases.push(p); });
                 document.getElementById('purchaseBadge').textContent = todayPurchases.length;
                 document.getElementById('totalPurchases').textContent = todayPurchases.length;
                 if (todayPurchases.length === 0) pList.innerHTML = '<li class="notif-item">No purchases today</li>';
-                else pList.innerHTML = todayPurchases.slice(0, 5).map(p => '<li class="notif-item"><span>New order: ' + (p.itemCount || 0) + ' items</span><span class="notif-time">' + (p.timestamp?.toDate ? p.timestamp.toDate().toLocaleTimeString() : 'Recently') + '</span></li>').join('');
+                else pList.innerHTML = todayPurchases.slice(0, 5).map(p => '<li class="notif-item"><span>New order: ' + (p.itemCount || 0) + ' items</span><span class="notif-time">' + (p.timestamp && p.timestamp.toDate ? p.timestamp.toDate().toLocaleTimeString() : 'Recently') + '</span></li>').join('');
             });
             const dList = document.getElementById('deleteNotifs');
             const upcomingDeletes = allItems.filter(i => { if (!i.scheduledDelete || i.deleted) return false; const deleteDate = i.scheduledDelete.toDate ? i.scheduledDelete.toDate() : new Date(i.scheduledDelete); return deleteDate > now; });
@@ -350,7 +455,7 @@
             if (reviewCount === 0) rList.innerHTML = '<li class="notif-item">No reviews yet</li>';
             else rList.innerHTML = '<li class="notif-item"><span>' + reviewCount + ' total reviews</span></li>';
         }
-        
+
         async function checkScheduledDeletions() {
             const now = new Date();
             const batch = writeBatch(db);
@@ -368,10 +473,11 @@
                     }
                 }
             }
-            if (hasDeletions) { try { await batch.commit(); debugLog('Auto-deleted ' + deletedCount + ' expired items', 'success'); showToast('🗑️ ' + deletedCount + ' expired item(s) auto-deleted', 'info'); } catch (error) { debugLog('Scheduled deletion error: ' + error.message, 'error'); } }
+            if (hasDeletions) { try { await batch.commit(); debugLog('Auto-deleted ' + deletedCount + ' expired items', 'success'); showToast('\u{1F5D1} ' + deletedCount + ' expired item(s) auto-deleted', 'info'); } catch (error) { debugLog('Scheduled deletion error: ' + error.message, 'error'); } }
         }
-        
-        window.showToast = function(msg, type = 'success') {
+
+        window.showToast = function(msg, type) {
+            type = type || 'success';
             const t = document.getElementById('toast');
             const msgEl = document.getElementById('toastMessage');
             msgEl.textContent = msg;
@@ -380,11 +486,11 @@
             if (type === 'error') icon.className = 'fas fa-exclamation-circle';
             else if (type === 'info') icon.className = 'fas fa-info-circle';
             else icon.className = 'fas fa-check-circle';
-            setTimeout(() => t.classList.remove('active'), 4000);
+            setTimeout(function() { t.classList.remove('active'); }, 4000);
         };
-        
+
         if (!checkAuth()) {
-            // Auth failed, redirect handled in checkAuth
+            // Auth failed
         } else {
             debugLog('Admin panel initialized', 'info');
             debugLog('Cloudinary: ' + CLOUDINARY_CONFIG.cloudName + ', Preset: ' + CLOUDINARY_CONFIG.uploadPreset, 'info');
