@@ -721,31 +721,21 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            // Map phone numbers to Firebase Auth email format
-            const phoneToEmail = {
-                '07044696807': 'admin1@quincyfashion.com',
-                '08144967122': 'admin2@quincyfashion.com'
+            // Valid credentials - only these two accounts should work
+            const validCredentials = {
+                '07044696807': 'QuincyFW',
+                '08144967122': 'QuincyFW'
             };
 
-            const email = phoneToEmail[username];
-            
-            if (!email) {
-                document.getElementById('errorMessage').style.display = 'block';
-                return;
-            }
-
-            try {
-                const userCredential = await signInWithEmailAndPassword(window.firebaseAuth, email, password);
-                const user = userCredential.user;
-                
+            // Check if username exists and password matches
+            if (validCredentials[username] && validCredentials[username] === password) {
                 // Store admin session
                 localStorage.setItem('adminLoggedIn', 'true');
                 localStorage.setItem('adminUser', username);
-                
+
                 closeDeveloperLogin();
                 window.location.href = 'admin.html';
-            } catch (error) {
-                console.error('Login error:', error);
+            } else {
                 document.getElementById('errorMessage').style.display = 'block';
             }
         }
