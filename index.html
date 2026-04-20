@@ -11,7 +11,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
@@ -24,29 +23,12 @@
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const auth = getAuth(app);
         
-        // Enable offline persistence to reduce reads
         enableIndexedDbPersistence(db).catch(err => {
-            if (err.code == 'failed-precondition') {
-                console.log('Multiple tabs open, persistence enabled in first tab only');
-            } else if (err.code == 'unimplemented') {
-                console.log('Browser does not support persistence');
-            }
+            console.log('Persistence error:', err.code);
         });
         
-        // Make available globally
-        window.firebaseApp = app;
         window.firebaseDb = db;
-        window.firebaseAuth = auth;
-        
-        // Monitor auth state
-        onAuthStateChanged(auth, (user) => {
-            window.currentUser = user;
-            if (user) {
-                console.log('Admin logged in:', user.uid);
-            }
-        });
     </script>
     
     <style>
@@ -658,9 +640,7 @@
         <span id="toastMessage">Operation successful!</span>
     </div>
 
-    <script type="module">
-        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        
+    <script>
         // Create animated stars
         function createStars() {
             const starsContainer = document.getElementById('stars');
@@ -710,18 +690,18 @@
             document.getElementById('loginModal').classList.add('active');
         }
 
-        window.closeDeveloperLogin = function() {
+        function closeDeveloperLogin() {
             document.getElementById('loginModal').classList.remove('active');
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('loginForm').reset();
         }
 
-        window.handleLogin = async function(e) {
+        function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            // Valid credentials - only these two accounts should work
+            // Valid credentials - phone numbers with QuincyFW password
             const validCredentials = {
                 '07044696807': 'QuincyFW',
                 '08144967122': 'QuincyFW'
@@ -729,9 +709,10 @@
 
             // Check if username exists and password matches
             if (validCredentials[username] && validCredentials[username] === password) {
-                // Store admin session
+                // Store admin session in localStorage
                 localStorage.setItem('adminLoggedIn', 'true');
                 localStorage.setItem('adminUser', username);
+                localStorage.setItem('adminLoginTime', Date.now().toString());
 
                 closeDeveloperLogin();
                 window.location.href = 'admin.html';
@@ -741,7 +722,7 @@
         }
 
         // Toast Notification
-        window.showToast = function(message) {
+        function showToast(message) {
             const toast = document.getElementById('successToast');
             document.getElementById('toastMessage').textContent = message;
             toast.classList.add('active');
@@ -756,6 +737,19 @@
                 closeDeveloperLogin();
             }
         });
+
+        // Check if admin is already logged in (optional auto-redirect)
+        // Uncomment below if you want auto-redirect to admin when already logged in
+        /*
+        if (localStorage.getItem('adminLoggedIn') === 'true') {
+            const loginTime = parseInt(localStorage.getItem('adminLoginTime') || '0');
+            const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
+            if (Date.now() - loginTime < sessionDuration) {
+                // Optional: uncomment to auto-redirect
+                // window.location.href = 'admin.html';
+            }
+        }
+        */
     </script>
 </body>
 </html>
