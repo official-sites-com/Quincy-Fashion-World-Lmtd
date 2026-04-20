@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quincy Fashion World | Premium Fashion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
+            authDomain: "quincy-fashion-world.firebaseapp.com",
+            projectId: "quincy-fashion-world",
+            storageBucket: "quincy-fashion-world.firebasestorage.app",
+            messagingSenderId: "902712490347",
+            appId: "1:902712490347:web:101d4882d7f1781df1f42e"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Enable offline persistence to reduce reads
+        enableIndexedDbPersistence(db).catch(err => {
+            if (err.code == 'failed-precondition') {
+                console.log('Multiple tabs open, persistence enabled in first tab only');
+            } else if (err.code == 'unimplemented') {
+                console.log('Browser does not support persistence');
+            }
+        });
+        
+        // Make available globally
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseAuth = auth;
+        
+        // Monitor auth state
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            if (user) {
+                console.log('Admin logged in:', user.uid);
+            }
+        });
+    </script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --royal-purple: #2d0a31;
+            --deep-purple: #1a0520;
+            --gold: #d4af37;
+            --gold-light: #f4d03f;
+            --white: #ffffff;
+            --cream: #faf8f5;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--deep-purple) 0%, var(--royal-purple) 50%, #4a1a4e 100%);
+            min-height: 100vh;
+            color: var(--white);
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .stars {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 2px; height: 2px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+            box-shadow: 0 0 10px var(--gold);
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0; width: 100%;
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(45, 10, 49, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px; left: 0;
+            width: 0; height: 2px;
+            background: var(--gold);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after,
+        .nav-links a.active::after { width: 100%; }
+        .nav-links a:hover { color: var(--gold); }
+
+        /* Brand Name - Hidden Action Button (Long Press) */
+        .brand-container {
+            position: relative;
+            cursor: default;
+            transition: transform 0.3s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .brand-container.pressing { transform: scale(0.95); }
+
+        .brand-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .brand-sub {
+            font-size: 0.7rem;
+            letter-spacing: 4px;
+            color: var(--gold);
+            opacity: 0.8;
+            text-align: center;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 50px 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--white) 0%, var(--gold-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-text p {
+            font-size: 1.2rem;
+            line-height: 1.8;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 40px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            color: var(--deep-purple);
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px rgba(212, 175, 55, 0.4);
+        }
+
+        /* Hero Image Grid */
+        .hero-images {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            position: relative;
+        }
+
+        .hero-img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 20px;
+            border: 3px solid var(--gold);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .hero-img:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 30px 60px rgba(212, 175, 55, 0.2);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-title {
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            margin-bottom: 60px;
+            color: var(--gold);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--gold);
+            box-shadow: 0 20px 40px rgba(212, 175, 55, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--gold-light);
+        }
+
+        /* Contact Section */
+        .contact-section {
+            padding: 80px 50px;
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .contact-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 30px;
+            background: var(--glass);
+            border-radius: 15px;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .contact-icon {
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--deep-purple);
+        }
+
+        .contact-info h4 {
+            color: var(--gold);
+            margin-bottom: 5px;
+        }
+
+        .contact-info p { font-size: 1.1rem; }
+
+        /* Developer Login Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .login-container {
+            background: linear-gradient(135deg, var(--deep-purple) 0%, var(--royal-purple) 100%);
+            border: 2px solid var(--gold);
+            border-radius: 20px;
+            padding: 50px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: none;
+            border: none;
+            color: var(--gold);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .close-btn:hover { transform: rotate(90deg); }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header i {
+            font-size: 4rem;
+            color: var(--gold);
+            margin-bottom: 20px;
+        }
+
+        .login-header h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+            font-size: 2rem;
+        }
+
+        .login-header p {
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--gold);
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;
+            color: var(--white);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--gold);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+            border: none;
+            border-radius: 10px;
+            color: var(--deep-purple);
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* Success Toast */
+        .success-toast {
+            position: fixed;
+            top: 30px; right: 30px;
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            align-items: center;
+            gap: 15px;
+            z-index: 4000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .success-toast.active { display: flex; }
+
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        footer p { color: rgba(255, 255, 255, 0.6); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .hero-text h1 { font-size: 2.5rem; }
+            nav { padding: 15px 20px; }
+            .nav-links { gap: 20px; font-size: 0.9rem; }
+            .hero-images { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Stars Background -->
+    <div class="stars" id="stars"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="brand-container" id="brandContainer">
+            <div class="brand-name">Quincy Fashion</div>
+            <div class="brand-sub">World</div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="index.html" class="active">Home</a></li>
+            <li><a href="order.html">Order</a></li>
+            <li><a href="purchase.html">Purchase</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Elevate Your Style With Premium Fashion</h1>
+                <p>Welcome to Quincy Fashion World, your ultimate destination for stylish, high-quality fashion pieces. From elegant female bags to sophisticated corporate shoes, trendy slides to statement heels - we bring you curated collections that keep you looking confident, trendy, and ready for every occasion.</p>
+                <a href="order.html" class="cta-button">
+                    <span>Explore Collection</span>
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="hero-images">
+                <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&h=300&fit=crop" alt="Luxury Heels" class="hero-img">
+                <img src="https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=300&fit=crop" alt="Designer Shoes" class="hero-img">
+                <img src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=300&fit=crop" alt="Luxury Bag" class="hero-img">
+                <img src="https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400&h=300&fit=crop" alt="Fashion Slides" class="hero-img">
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <h2 class="section-title">What We Offer</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-shopping-bag feature-icon"></i>
+                <h3>Female Bags</h3>
+                <p>Elegant designer bags perfect for every occasion, from casual outings to corporate events.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-shoe-prints feature-icon"></i>
+                <h3>Slides</h3>
+                <p>Comfortable and stylish slides for relaxed days without compromising on fashion.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-running feature-icon"></i>
+                <h3>Unisex Sneakers</h3>
+                <p>Trendy sneakers designed for everyone, combining comfort with street-style aesthetics.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-female feature-icon"></i>
+                <h3>Heels</h3>
+                <p>Statement heels that add confidence and elegance to any outfit, from stilettos to block heels.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-briefcase feature-icon"></i>
+                <h3>Men's Corporate Shoes</h3>
+                <p>Professional footwear that commands respect in the boardroom and beyond.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-truck feature-icon"></i>
+                <h3>Nationwide Delivery</h3>
+                <p>We deliver anywhere in Nigeria. Quality fashion delivered to your doorstep.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact-section">
+        <h2 class="section-title">Get In Touch</h2>
+        <div class="contact-grid">
+            <div class="contact-card">
+                <div class="contact-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div class="contact-info">
+                    <h4>Location</h4>
+                    <p>Auchi, Edo State, Nigeria</p>
+                </div>
+            </div>
+            <div class="contact-card">
+                <div class="contact-icon">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <div class="contact-info">
+                    <h4>Call Us</h4>
+                    <p>+234 814 496 7122</p>
+                </div>
+            </div>
+            <div class="contact-card">
+                <div class="contact-icon">
+                    <i class="fab fa-whatsapp"></i>
+                </div>
+                <div class="contact-info">
+                    <h4>WhatsApp</h4>
+                    <p>+234 814 496 7122</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Quincy Fashion World. All rights reserved. | Premium Fashion, Premium You.</p>
+    </footer>
+
+    <!-- Developer Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="login-container">
+            <button class="close-btn" onclick="closeDeveloperLogin()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="login-header">
+                <i class="fas fa-lock"></i>
+                <h2>Developer Access</h2>
+                <p>Authorized personnel only</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Access Dashboard
+                </button>
+                <p class="error-message" id="errorMessage">Invalid credentials. Access denied.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success Toast -->
+    <div class="success-toast" id="successToast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Operation successful!</span>
+    </div>
+
+    <script type="module">
+        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
+        // Create animated stars
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        createStars();
+
+        // Long Press Detection for Brand Name
+        const brandContainer = document.getElementById('brandContainer');
+        let pressTimer;
+        const longPressDuration = 800;
+
+        function startPress(e) {
+            e.preventDefault();
+            brandContainer.classList.add('pressing');
+            pressTimer = setTimeout(() => {
+                openDeveloperLogin();
+                brandContainer.classList.remove('pressing');
+            }, longPressDuration);
+        }
+
+        function cancelPress(e) {
+            clearTimeout(pressTimer);
+            brandContainer.classList.remove('pressing');
+        }
+
+        brandContainer.addEventListener('mousedown', startPress);
+        brandContainer.addEventListener('mouseup', cancelPress);
+        brandContainer.addEventListener('mouseleave', cancelPress);
+        brandContainer.addEventListener('touchstart', startPress, {passive: false});
+        brandContainer.addEventListener('touchend', cancelPress);
+        brandContainer.addEventListener('touchmove', cancelPress);
+        brandContainer.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            return false;
+        });
+
+        // Developer Login Functions
+        function openDeveloperLogin() {
+            document.getElementById('loginModal').classList.add('active');
+        }
+
+        window.closeDeveloperLogin = function() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('loginForm').reset();
+        }
+
+        window.handleLogin = async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Valid credentials - only these two accounts should work
+            const validCredentials = {
+                '07044696807': 'QuincyFW',
+                '08144967122': 'QuincyFW'
+            };
+
+            // Check if username exists and password matches
+            if (validCredentials[username] && validCredentials[username] === password) {
+                // Store admin session
+                localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('adminUser', username);
+
+                closeDeveloperLogin();
+                window.location.href = 'admin.html';
+            } else {
+                document.getElementById('errorMessage').style.display = 'block';
+            }
+        }
+
+        // Toast Notification
+        window.showToast = function(message) {
+            const toast = document.getElementById('successToast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('active');
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        // Close modal on outside click
+        document.getElementById('loginModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeveloperLogin();
+            }
+        });
+    </script>
+</body>
+</html>
