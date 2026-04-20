@@ -6,43 +6,7 @@
     <title>Purchase | Quincy Fashion World</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc,
-            onSnapshot,
-            query,
-            orderBy,
-            serverTimestamp,
-            enableIndexedDbPersistence
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
-            authDomain: "quincy-fashion-world.firebaseapp.com",
-            projectId: "quincy-fashion-world",
-            storageBucket: "quincy-fashion-world.firebasestorage.app",
-            messagingSenderId: "902712490347",
-            appId: "1:902712490347:web:101d4882d7f1781df1f42e"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        enableIndexedDbPersistence(db).catch(err => {
-            console.log('Persistence error:', err.code);
-        });
-        
-        window.firebaseDb = db;
-        window.firestoreModules = {
-            collection, addDoc, onSnapshot, query, orderBy, serverTimestamp
-        };
-    </script>
-    
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -382,6 +346,12 @@
             box-shadow: 0 15px 30px rgba(37, 211, 102, 0.3);
         }
 
+        .whatsapp-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .call-btn {
             display: flex;
             align-items: center;
@@ -513,6 +483,12 @@
             box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
         }
 
+        .submit-review-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Reviews Display */
         .reviews-list {
             display: flex;
@@ -533,7 +509,7 @@
             transform: translateX(5px);
         }
 
-        .review-header {
+        .review-item-header {
             display: flex;
             align-items: center;
             gap: 15px;
@@ -724,7 +700,7 @@
                         <label for="reviewText">Your Review</label>
                         <textarea id="reviewText" placeholder="Tell us about your experience with Quincy Fashion World..." required></textarea>
                     </div>
-                    <button type="submit" class="submit-review-btn">
+                    <button type="submit" class="submit-review-btn" id="submitReviewBtn">
                         <i class="fas fa-paper-plane"></i>
                         Submit Review
                     </button>
@@ -748,10 +724,40 @@
     </div>
 
     <script type="module">
-        const { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } = window.firestoreModules;
-        const db = window.firebaseDb;
-        
-        // Create stars
+        // ============================================
+        // FIREBASE IMPORTS & CONFIGURATION
+        // ============================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc,
+            onSnapshot,
+            query,
+            orderBy,
+            serverTimestamp,
+            enableIndexedDbPersistence
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
+            authDomain: "quincy-fashion-world.firebaseapp.com",
+            projectId: "quincy-fashion-world",
+            storageBucket: "quincy-fashion-world.firebasestorage.app",
+            messagingSenderId: "902712490347",
+            appId: "1:902712490347:web:101d4882d7f1781df1f42e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        enableIndexedDbPersistence(db).catch(err => {
+            console.log('Persistence error:', err.code);
+        });
+
+        // ============================================
+        // STARS BACKGROUND
+        // ============================================
         function createStars() {
             const container = document.getElementById('stars');
             for (let i = 0; i < 100; i++) {
@@ -765,7 +771,9 @@
         }
         createStars();
 
-        // Track purchase and clear cart
+        // ============================================
+        // CART & PURCHASE LOGIC
+        // ============================================
         async function trackPurchase(items) {
             try {
                 await addDoc(collection(db, 'purchases'), {
@@ -776,29 +784,30 @@
                         category: i.category,
                         price: i.price
                     })),
+                    totalValue: items.reduce((sum, i) => sum + (i.price || 0), 0),
                     userAgent: navigator.userAgent,
                     source: 'website'
                 });
-                
+
                 // Clear cart after successful tracking
                 localStorage.removeItem('selectedItems');
-                
-                // Mark that user completed purchase (for cart clearing on return)
                 sessionStorage.setItem('purchaseCompleted', 'true');
-                
+
             } catch (error) {
                 console.error('Purchase tracking error:', error);
             }
         }
 
-        // Load selected items
+        // ============================================
+        // LOAD SELECTED ITEMS
+        // ============================================
         function loadSelectedItems() {
             // Check if returning from completed purchase
             if (sessionStorage.getItem('purchaseCompleted') === 'true') {
                 localStorage.removeItem('selectedItems');
                 sessionStorage.removeItem('purchaseCompleted');
             }
-            
+
             const items = JSON.parse(localStorage.getItem('selectedItems') || '[]');
             const container = document.getElementById('selectedItems');
 
@@ -812,6 +821,7 @@
                         </a>
                     </div>
                 `;
+
                 // Disable WhatsApp button when no items
                 const whatsappBtn = document.getElementById('whatsappBtn');
                 whatsappBtn.href = '#';
@@ -822,9 +832,11 @@
                 return;
             }
 
+            const totalPrice = items.reduce((sum, item) => sum + (item.price || 0), 0);
+
             container.innerHTML = items.map((item, index) => `
                 <div class="selected-item">
-                    <img src="${item.thumbnail || item.image}" alt="${item.name}">
+                    <img src="${item.thumbnail || item.image}" alt="${item.name}" onerror="this.src='${item.image}'">
                     <div class="selected-item-info">
                         <div class="selected-item-name">${item.name}</div>
                         <div class="selected-item-category">${item.category}</div>
@@ -836,18 +848,27 @@
                 </div>
             `).join('');
 
-            // Update WhatsApp link with items
+            // Add total
+            container.innerHTML += `
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid rgba(212, 175, 55, 0.3); text-align: right;">
+                    <div style="font-size: 1.2rem; color: var(--gold-light);">Total Items: ${items.length}</div>
+                    <div style="font-size: 1.5rem; color: var(--gold); font-weight: 700;">₦${totalPrice.toLocaleString()}</div>
+                </div>
+            `;
+
+            // Update WhatsApp link
             updateWhatsAppLink(items);
         }
 
         function updateWhatsAppLink(items) {
-            const itemList = items.map(item => `- ${item.name}`).join('%0A');
+            const itemList = items.map(item => `- ${item.name} (₦${(item.price || 0).toLocaleString()})`).join('%0A');
             const totalPrice = items.reduce((sum, item) => sum + (item.price || 0), 0);
             const message = `Hello Quincy Fashion World!%0A%0AI would like to purchase the following items:%0A${itemList}%0A%0ATotal: ₦${totalPrice.toLocaleString()}%0A%0APlease provide me with delivery details.`;
+
             const whatsappBtn = document.getElementById('whatsappBtn');
             whatsappBtn.href = `https://wa.me/2348144967122?text=${message}`;
-            
-            // Add click tracking and cart clearing
+
+            // Add click tracking
             whatsappBtn.onclick = async function(e) {
                 // Don't prevent default - let the link work
                 await trackPurchase(items);
@@ -856,29 +877,32 @@
 
         window.removeItem = function(index) {
             let items = JSON.parse(localStorage.getItem('selectedItems') || '[]');
+            const removedName = items[index]?.name || 'Item';
             items.splice(index, 1);
             localStorage.setItem('selectedItems', JSON.stringify(items));
             loadSelectedItems();
-            showToast('Item removed');
-        }
+            showToast(`Removed "${removedName}" from cart`);
+        };
 
-        // Reviews System with Firebase
+        // ============================================
+        // REVIEWS SYSTEM
+        // ============================================
         let reviewsUnsubscribe = null;
 
         function loadReviews() {
             const container = document.getElementById('reviewsList');
             const countElement = document.getElementById('reviewCount');
-            
+
             if (reviewsUnsubscribe) reviewsUnsubscribe();
-            
+
             const q = query(collection(db, 'reviews'), orderBy('createdAt', 'desc'));
-            
+
             reviewsUnsubscribe = onSnapshot(q, (snapshot) => {
                 const reviews = [];
                 snapshot.forEach((doc) => {
                     reviews.push({ id: doc.id, ...doc.data() });
                 });
-                
+
                 countElement.textContent = `${reviews.length} review${reviews.length !== 1 ? 's' : ''}`;
 
                 if (reviews.length === 0) {
@@ -892,13 +916,14 @@
                 }
 
                 container.innerHTML = reviews.map(review => {
-                    const date = review.createdAt?.toDate ? review.createdAt.toDate().toLocaleDateString('en-US', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                    }) : review.date || 'Recently';
-                    
+                    const date = review.createdAt?.toDate ? 
+                        review.createdAt.toDate().toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'long', day: 'numeric'
+                        }) : review.date || 'Recently';
+
                     return `
                         <div class="review-item">
-                            <div class="review-header">
+                            <div class="review-item-header">
                                 <div class="review-avatar">
                                     <i class="fas fa-user"></i>
                                 </div>
@@ -911,6 +936,7 @@
                         </div>
                     `;
                 }).join('');
+
             }, (error) => {
                 console.error('Reviews listener error:', error);
             });
@@ -918,11 +944,18 @@
 
         window.submitReview = async function(e) {
             e.preventDefault();
-            
+
             const name = document.getElementById('reviewerName').value.trim();
             const text = document.getElementById('reviewText').value.trim();
+            const btn = document.getElementById('submitReviewBtn');
 
-            if (!name || !text) return;
+            if (!name || !text) {
+                showToast('Please fill in all fields', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
 
             try {
                 await addDoc(collection(db, 'reviews'), {
@@ -933,32 +966,55 @@
                         year: 'numeric', month: 'long', day: 'numeric' 
                     })
                 });
-                
+
                 document.getElementById('reviewForm').reset();
                 showToast('Thank you! Your review has been submitted.');
+
             } catch (error) {
                 console.error('Review submission error:', error);
-                showToast('Failed to submit review. Please try again.');
+                showToast('Failed to submit review. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
             }
-        }
+        };
 
-        function showToast(message) {
+        // ============================================
+        // TOAST NOTIFICATIONS
+        // ============================================
+        function showToast(message, type = 'success') {
             const toast = document.getElementById('successToast');
-            document.getElementById('toastMessage').textContent = message;
+            const msgEl = document.getElementById('toastMessage');
+            msgEl.textContent = message;
             toast.classList.add('active');
+
+            if (type === 'error') {
+                toast.style.background = 'linear-gradient(135deg, #ff4757 0%, #ff6b81 100%)';
+            } else {
+                toast.style.background = 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)';
+            }
+
             setTimeout(() => {
                 toast.classList.remove('active');
             }, 3000);
         }
 
+        // Make showToast available globally
+        window.showToast = showToast;
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
         window.goHome = function() {
             window.location.href = 'index.html';
-        }
+        };
 
-        // Initialize
+        // ============================================
+        // INITIALIZATION
+        // ============================================
         loadSelectedItems();
         loadReviews();
-        
+
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (reviewsUnsubscribe) reviewsUnsubscribe();
