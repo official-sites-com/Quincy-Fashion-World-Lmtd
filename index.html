@@ -6,52 +6,10 @@
     <title>Quincy Fashion World | Premium Fashion</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
-            authDomain: "quincy-fashion-world.firebaseapp.com",
-            projectId: "quincy-fashion-world",
-            storageBucket: "quincy-fashion-world.firebasestorage.app",
-            messagingSenderId: "902712490347",
-            appId: "1:902712490347:web:101d4882d7f1781df1f42e"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        // Enable offline persistence to reduce reads
-        enableIndexedDbPersistence(db).catch(err => {
-            if (err.code == 'failed-precondition') {
-                console.log('Multiple tabs open, persistence enabled in first tab only');
-            } else if (err.code == 'unimplemented') {
-                console.log('Browser does not support persistence');
-            }
-        });
-        
-        // Make available globally
-        window.firebaseApp = app;
-        window.firebaseDb = db;
-        window.firebaseAuth = auth;
-        
-        // Monitor auth state
-        onAuthStateChanged(auth, (user) => {
-            window.currentUser = user;
-            if (user) {
-                console.log('Admin logged in:', user.uid);
-            }
-        });
-    </script>
-    
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         :root {
             --royal-purple: #2d0a31;
             --deep-purple: #1a0520;
@@ -658,10 +616,10 @@
         <span id="toastMessage">Operation successful!</span>
     </div>
 
-    <script type="module">
-        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        
-        // Create animated stars
+    <script>
+        // ============================================
+        // STARS BACKGROUND
+        // ============================================
         function createStars() {
             const starsContainer = document.getElementById('stars');
             for (let i = 0; i < 100; i++) {
@@ -675,7 +633,9 @@
         }
         createStars();
 
-        // Long Press Detection for Brand Name
+        // ============================================
+        // LONG PRESS DETECTION FOR BRAND NAME
+        // ============================================
         const brandContainer = document.getElementById('brandContainer');
         let pressTimer;
         const longPressDuration = 800;
@@ -705,33 +665,35 @@
             return false;
         });
 
-        // Developer Login Functions
+        // ============================================
+        // DEVELOPER LOGIN FUNCTIONS
+        // ============================================
         function openDeveloperLogin() {
             document.getElementById('loginModal').classList.add('active');
         }
 
-        window.closeDeveloperLogin = function() {
+        function closeDeveloperLogin() {
             document.getElementById('loginModal').classList.remove('active');
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('loginForm').reset();
         }
 
-        window.handleLogin = async function(e) {
+        function handleLogin(e) {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            // Valid credentials - only these two accounts should work
+            // Valid credentials
             const validCredentials = {
                 '07044696807': 'QuincyFW',
                 '08144967122': 'QuincyFW'
             };
 
-            // Check if username exists and password matches
             if (validCredentials[username] && validCredentials[username] === password) {
                 // Store admin session
                 localStorage.setItem('adminLoggedIn', 'true');
                 localStorage.setItem('adminUser', username);
+                localStorage.setItem('adminLoginTime', Date.now().toString());
 
                 closeDeveloperLogin();
                 window.location.href = 'admin.html';
@@ -740,8 +702,14 @@
             }
         }
 
-        // Toast Notification
-        window.showToast = function(message) {
+        // Make functions globally available
+        window.closeDeveloperLogin = closeDeveloperLogin;
+        window.handleLogin = handleLogin;
+
+        // ============================================
+        // TOAST NOTIFICATION
+        // ============================================
+        function showToast(message) {
             const toast = document.getElementById('successToast');
             document.getElementById('toastMessage').textContent = message;
             toast.classList.add('active');
@@ -750,7 +718,11 @@
             }, 3000);
         }
 
-        // Close modal on outside click
+        window.showToast = showToast;
+
+        // ============================================
+        // MODAL CLOSE ON OUTSIDE CLICK
+        // ============================================
         document.getElementById('loginModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeDeveloperLogin();
