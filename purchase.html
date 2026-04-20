@@ -603,6 +603,32 @@
 
         .success-toast.active { display: flex; }
 
+        /* Deletion Toast */
+        .deletion-toast {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4757;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 10000;
+            display: none;
+            animation: slideDown 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .deletion-toast.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
         /* Footer */
         footer {
             background: rgba(0, 0, 0, 0.3);
@@ -747,6 +773,11 @@
         <span id="toastMessage">Review submitted successfully!</span>
     </div>
 
+    <!-- Deletion Toast -->
+    <div class="deletion-toast" id="deletionToast">
+        Some items in your cart are no longer available and have been removed
+    </div>
+
     <script type="module">
         const { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } = window.firestoreModules;
         const db = window.firebaseDb;
@@ -764,6 +795,58 @@
             }
         }
         createStars();
+
+        // Real-time items listener to detect deletions
+        let itemsUnsubscribe = null;
+        let allActiveItemIds = new Set();
+
+        function subscribeToItems() {
+            const q = query(collection(db, 'items'), orderBy('createdAt', 'desc'));
+            
+            itemsUnsubscribe = onSnapshot(q, (snapshot) => {
+                const currentIds = new Set();
+                const deletedIds = [];
+                
+                snapshot.forEach((doc) => {
+                    const item = { id: doc.id, ...doc.data() };
+                    if (!item.deleted && item.isActive !== false) {
+                        currentIds.add(item.id);
+                    }
+                });
+                
+                // Find items that were in cart but are now deleted
+                const cartItems = JSON.parse(localStorage.getItem('selectedItems') || '[]');
+                const removedItems = [];
+                
+                cartItems.forEach(item => {
+                    if (!currentIds.has(item.id) && allActiveItemIds.has(item.id)) {
+                        deletedIds.push(item.id);
+                        removedItems.push(item.name);
+                    }
+                });
+                
+                allActiveItemIds = currentIds;
+                
+                if (removedItems.length > 0) {
+                    // Remove deleted items from cart
+                    const updatedCart = cartItems.filter(item => currentIds.has(item.id));
+                    localStorage.setItem('selectedItems', JSON.stringify(updatedCart));
+                    
+                    // Show notification and reload display
+                    showDeletionToast(removedItems);
+                    loadSelectedItems();
+                }
+            });
+        }
+        
+        function showDeletionToast(removedNames) {
+            const toast = document.getElementById('deletionToast');
+            toast.textContent = removedNames.length === 1 
+                ? `"${removedNames[0]}" is no longer available and was removed from your cart`
+                : `${removedNames.length} items are no longer available and were removed from your cart`;
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 4000);
+        }
 
         // Track purchase and clear cart
         async function trackPurchase(items) {
@@ -824,7 +907,7 @@
 
             container.innerHTML = items.map((item, index) => `
                 <div class="selected-item">
-                    <img src="${item.thumbnail || item.image}" alt="${item.name}">
+                    <img src="${item.thumbnail || item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/60x60/2d0a31/d4af37?text=QF'">
                     <div class="selected-item-info">
                         <div class="selected-item-name">${item.name}</div>
                         <div class="selected-item-category">${item.category}</div>
@@ -958,10 +1041,12 @@
         // Initialize
         loadSelectedItems();
         loadReviews();
+        subscribeToItems(); // Start listening for item deletions
         
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (reviewsUnsubscribe) reviewsUnsubscribe();
+            if (itemsUnsubscribe) itemsUnsubscribe();
         });
     </script>
 </body>
