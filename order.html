@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,7 +32,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        // Enable offline persistence
         enableIndexedDbPersistence(db).catch(err => {
             console.log('Persistence error:', err.code);
         });
@@ -479,6 +477,32 @@
             100% { background-position: -200% 0; }
         }
 
+        /* Deleted Item Notification */
+        .deletion-toast {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4757;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 10000;
+            display: none;
+            animation: slideDown 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .deletion-toast.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .main-content {
@@ -558,6 +582,11 @@
         </button>
     </div>
 
+    <!-- Deletion Notification Toast -->
+    <div class="deletion-toast" id="deletionToast">
+        Some items in your cart are no longer available and have been removed
+    </div>
+
     <script type="module">
         const { collection, onSnapshot, query, where, orderBy, limit } = window.firestoreModules;
         const db = window.firebaseDb;
@@ -585,34 +614,49 @@
         function subscribeToItems() {
             const now = new Date();
             
-            // Query: all items ordered by creation date (no composite index needed)
+            // Query: active, non-deleted items
             const q = query(
                 collection(db, 'items'),
+                where('isActive', '==', true),
+                where('deleted', '!=', true),
+                orderBy('deleted'),
                 orderBy('createdAt', 'desc')
             );
             
             itemsUnsubscribe = onSnapshot(q, (snapshot) => {
                 const newItems = [];
+                const deletedItemIds = [];
+                
+                snapshot.docChanges().forEach((change) => {
+                    const item = { id: change.doc.id, ...change.doc.data() };
+                    
+                    if (change.type === 'removed' || item.deleted === true) {
+                        // Item was deleted
+                        deletedItemIds.push(item.id);
+                    }
+                });
+                
                 snapshot.forEach((doc) => {
                     const item = { id: doc.id, ...doc.data() };
-
-                    // Skip inactive items (client-side filter since we removed the where clause)
-                    if (item.isActive === false) {
-                        return;
-                    }
-                    
-                    // Check if item has expired (client-side validation)
-                    if (item.scheduledDelete) {
-                        const deleteDate = item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete);
-                        if (deleteDate <= now) {
-                            return; // Skip expired items
+                    // Only show non-deleted, active items
+                    if (!item.deleted && item.isActive !== false) {
+                        // Check if item has expired (client-side validation)
+                        if (item.scheduledDelete) {
+                            const deleteDate = item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete);
+                            if (deleteDate <= now) {
+                                return; // Skip expired items
+                            }
                         }
+                        newItems.push(item);
                     }
-                    
-                    newItems.push(item);
                 });
                 
                 allItems = newItems;
+                
+                // Handle deleted items
+                if (deletedItemIds.length > 0) {
+                    handleDeletedItems(deletedItemIds);
+                }
                 
                 // Validate cart - remove items that no longer exist or expired
                 validateCart();
@@ -623,25 +667,98 @@
                 
             }, (error) => {
                 console.error('Items listener error:', error);
-                showError('Connection error. Please check your internet and refresh.');
+                // Fallback: try without the composite index
+                subscribeToItemsFallback();
             });
+        }
+        
+        // Fallback if composite index doesn't exist
+        function subscribeToItemsFallback() {
+            const q = query(collection(db, 'items'), orderBy('createdAt', 'desc'));
+            
+            itemsUnsubscribe = onSnapshot(q, (snapshot) => {
+                const newItems = [];
+                const deletedItemIds = [];
+                const now = new Date();
+                
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'removed') {
+                        deletedItemIds.push(change.doc.id);
+                    }
+                });
+                
+                snapshot.forEach((doc) => {
+                    const item = { id: doc.id, ...doc.data() };
+                    if (!item.deleted && item.isActive !== false) {
+                        if (item.scheduledDelete) {
+                            const deleteDate = item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete);
+                            if (deleteDate <= now) return;
+                        }
+                        newItems.push(item);
+                    } else {
+                        deletedItemIds.push(item.id);
+                    }
+                });
+                
+                allItems = newItems;
+                
+                if (deletedItemIds.length > 0) {
+                    handleDeletedItems(deletedItemIds);
+                }
+                
+                validateCart();
+                renderItems();
+                updateCartUI();
+            });
+        }
+        
+        function handleDeletedItems(deletedIds) {
+            let cartChanged = false;
+            const removedNames = [];
+            
+            selectedItems = selectedItems.filter(item => {
+                const isDeleted = deletedIds.includes(item.id);
+                if (isDeleted) {
+                    cartChanged = true;
+                    removedNames.push(item.name);
+                }
+                return !isDeleted;
+            });
+            
+            if (cartChanged) {
+                localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
+                showDeletionToast(removedNames);
+                updateCartUI();
+            }
         }
 
         function validateCart() {
             const activeIds = allItems.map(item => item.id);
             const originalCount = selectedItems.length;
+            const removedNames = [];
             
             selectedItems = selectedItems.filter(item => {
                 const stillExists = activeIds.includes(item.id);
                 if (!stillExists) {
-                    console.log('Removing deleted/expired item from cart:', item.name);
+                    removedNames.push(item.name);
                 }
                 return stillExists;
             });
             
             if (selectedItems.length !== originalCount) {
                 localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
-                showToast('Some items in your cart are no longer available and have been removed');
+                showDeletionToast(removedNames);
+            }
+        }
+        
+        function showDeletionToast(removedNames) {
+            const toast = document.getElementById('deletionToast');
+            if (removedNames.length > 0) {
+                toast.textContent = removedNames.length === 1 
+                    ? `"${removedNames[0]}" is no longer available and was removed from your cart`
+                    : `${removedNames.length} items are no longer available and were removed from your cart`;
+                toast.classList.add('active');
+                setTimeout(() => toast.classList.remove('active'), 4000);
             }
         }
 
@@ -677,7 +794,8 @@
                         <img src="${item.thumbnailUrl || item.imageUrl}" 
                              alt="${item.name}" 
                              class="item-image"
-                             loading="lazy">
+                             loading="lazy"
+                             onerror="this.src='https://via.placeholder.com/300x280/2d0a31/d4af37?text=Quincy+Fashion'">
                         <div class="item-info">
                             <div class="item-name">${item.name}</div>
                             <div class="item-category">${item.category || 'New Arrival'}</div>
@@ -753,46 +871,6 @@
 
         window.goHome = function() {
             window.location.href = 'index.html';
-        }
-
-        function showToast(message) {
-            // Simple toast implementation
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                top: 100px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: var(--gold);
-                color: var(--deep-purple);
-                padding: 15px 30px;
-                border-radius: 10px;
-                font-weight: 600;
-                z-index: 10000;
-                animation: slideDown 0.3s ease;
-            `;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        function showError(message) {
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                top: 100px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: #ff4757;
-                color: white;
-                padding: 15px 30px;
-                border-radius: 10px;
-                font-weight: 600;
-                z-index: 10000;
-            `;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 5000);
         }
 
         // Initialize
