@@ -22,9 +22,9 @@
             orderBy,
             serverTimestamp,
             getDocs,
-            writeBatch
+            writeBatch,
+            updateDoc
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
@@ -37,12 +37,10 @@
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const auth = getAuth(app);
         
         window.firebaseDb = db;
-        window.firebaseAuth = auth;
         window.firestoreModules = {
-            collection, addDoc, deleteDoc, doc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs, writeBatch
+            collection, addDoc, deleteDoc, doc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs, writeBatch, updateDoc
         };
     </script>
     
@@ -730,44 +728,67 @@
     </div>
 
     <script type="module">
-        import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        
-        const CLOUDINARY_CLOUD_NAME = 'dyesrp8ye';
-        const CLOUDINARY_UPLOAD_PRESET = 'quincy_fashion_preset';
         const { 
             collection, addDoc, deleteDoc, doc, onSnapshot, query, where, 
-            orderBy, serverTimestamp, getDocs, writeBatch 
+            orderBy, serverTimestamp, getDocs, writeBatch, updateDoc 
         } = window.firestoreModules;
         
         const db = window.firebaseDb;
-        const auth = window.firebaseAuth;
         
-        // Check authentication
+        // Check admin authentication via localStorage
         function checkAuth() {
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
-                if (!user) {
-                    window.location.href = 'index.html';
-                    return false;
-                }
-                document.getElementById('adminUser').textContent = `Admin: ${localStorage.getItem('adminUser') || 'Unknown'}`;
-                return true;
-            });
-            return unsubscribe;
-        }
-
-        window.logout = async function() {
-            try {
-                await signOut(auth);
+            const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
+            const adminUser = localStorage.getItem('adminUser');
+            
+            if (!isLoggedIn || !adminUser) {
+                // Not logged in, redirect to home
+                window.location.href = 'index.html';
+                return false;
+            }
+            
+            // Verify credentials are valid
+            const validCredentials = {
+                '07044696807': 'QuincyFW',
+                '08144967122': 'QuincyFW'
+            };
+            
+            if (!validCredentials[adminUser]) {
                 localStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('adminUser');
+                localStorage.removeItem('adminLoginTime');
                 window.location.href = 'index.html';
-            } catch (error) {
-                console.error('Logout error:', error);
+                return false;
             }
+            
+            // Check session expiry (24 hours)
+            const loginTime = parseInt(localStorage.getItem('adminLoginTime') || '0');
+            const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
+            
+            if (Date.now() - loginTime > sessionDuration) {
+                // Session expired
+                localStorage.removeItem('adminLoggedIn');
+                localStorage.removeItem('adminUser');
+                localStorage.removeItem('adminLoginTime');
+                window.location.href = 'index.html';
+                return false;
+            }
+            
+            document.getElementById('adminUser').textContent = `Admin: ${adminUser}`;
+            return true;
+        }
+
+        window.logout = function() {
+            localStorage.removeItem('adminLoggedIn');
+            localStorage.removeItem('adminUser');
+            localStorage.removeItem('adminLoginTime');
+            window.location.href = 'index.html';
         }
 
         // Upload image to Cloudinary
         async function uploadToCloudinary(file) {
+            const CLOUDINARY_CLOUD_NAME = 'dyesrp8ye';
+            const CLOUDINARY_UPLOAD_PRESET = 'quincy_uploads';
+            
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
@@ -794,20 +815,6 @@
                 console.error('Cloudinary upload error:', error);
                 throw error;
             }
-        }
-
-        // Delete image from Cloudinary (requires backend signature in production)
-        async function deleteFromCloudinary(publicId) {
-            // Note: In production, this should be done via backend to protect API secret
-            // For now, we'll track deleted IDs and clean up via scheduled function
-            console.log('Marking for deletion:', publicId);
-            // Store in deletion queue for backend cleanup
-            const deletionQueue = JSON.parse(localStorage.getItem('cloudinaryDeletionQueue') || '[]');
-            deletionQueue.push({
-                publicId,
-                timestamp: new Date().toISOString()
-            });
-            localStorage.setItem('cloudinaryDeletionQueue', JSON.stringify(deletionQueue));
         }
 
         // Generate 10 Upload Slots
@@ -914,7 +921,8 @@
                     thumbnailUrl: cloudinaryData.thumbnailUrl,
                     createdAt: serverTimestamp(),
                     scheduledDelete: schedCheck ? new Date(schedTime) : null,
-                    isActive: true
+                    isActive: true,
+                    deleted: false
                 };
                 
                 await addDoc(collection(db, 'items'), itemData);
@@ -952,23 +960,28 @@
             itemsUnsubscribe = onSnapshot(q, (snapshot) => {
                 allItems = [];
                 snapshot.forEach((doc) => {
-                    allItems.push({ id: doc.id, ...doc.data() });
+                    const item = { id: doc.id, ...doc.data() };
+                    // Only show non-deleted items
+                    if (!item.deleted) {
+                        allItems.push(item);
+                    }
                 });
                 
-                // Always render items when data updates (works across all tabs)
-                renderItemsList();
+                // Update manage section if active
+                if (document.getElementById('manageSection').classList.contains('active')) {
+                    renderItemsList();
+                }
                 
                 updateStats();
                 checkScheduledDeletions();
             }, (error) => {
                 console.error('Items listener error:', error);
-                showToast('Error loading items: ' + error.message, 'error');
+                showToast('Error loading items. Please refresh.', 'error');
             });
         }
 
         function renderItemsList() {
             const container = document.getElementById('itemsList');
-            if (!container) return; // Safety check if container doesn't exist
             
             if (allItems.length === 0) {
                 container.innerHTML = `
@@ -994,7 +1007,7 @@
                                 Auto-delete: ${item.scheduledDelete.toDate ? item.scheduledDelete.toDate().toLocaleString() : new Date(item.scheduledDelete).toLocaleString()}
                             </div>
                         ` : ''}
-                        <button class="delete-btn" onclick="deleteItem('${item.id}', '${item.imagePublicId}')">
+                        <button class="delete-btn" onclick="deleteItem('${item.id}', '${item.imagePublicId || ''}')">
                             <i class="fas fa-trash"></i> Delete Item
                         </button>
                     </div>
@@ -1003,36 +1016,22 @@
         }
 
         window.loadItems = function() {
-            // Render immediately if data is already loaded
             renderItemsList();
-            // If no items yet, show loading state (listener will populate soon)
-            if (allItems.length === 0) {
-                const container = document.getElementById('itemsList');
-                if (container && container.children.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state" style="grid-column: 1/-1;">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <h3>Loading items...</h3>
-                            <p>Please wait while we fetch your items</p>
-                        </div>
-                    `;
-                }
-            }
         }
 
         window.deleteItem = async function(id, publicId) {
-            if (!confirm('Are you sure you want to delete this item?')) return;
+            if (!confirm('Are you sure you want to delete this item? This will remove it from all customer carts immediately.')) return;
             
             try {
-                // Delete from Firestore
-                await deleteDoc(doc(db, 'items', id));
+                // Soft delete - mark as deleted rather than removing from Firestore
+                // This ensures all clients get the real-time update
+                await updateDoc(doc(db, 'items', id), {
+                    deleted: true,
+                    deletedAt: serverTimestamp(),
+                    isActive: false
+                });
                 
-                // Queue Cloudinary deletion
-                if (publicId) {
-                    await deleteFromCloudinary(publicId);
-                }
-                
-                // Log deletion
+                // Also log the deletion
                 await addDoc(collection(db, 'deletionLogs'), {
                     itemId: id,
                     itemName: allItems.find(i => i.id === id)?.name || 'Unknown',
@@ -1040,7 +1039,7 @@
                     type: 'manual'
                 });
                 
-                showToast('Item deleted successfully');
+                showToast('Item deleted and removed from all carts');
                 updateStats();
             } catch (error) {
                 console.error('Delete error:', error);
@@ -1108,7 +1107,7 @@
         let purchasesUnsubscribe = null;
 
         function updateStats() {
-            // Items count
+            // Items count (non-deleted)
             document.getElementById('totalItems').textContent = allItems.length;
             
             // Scheduled deletions count
@@ -1121,7 +1120,6 @@
 
         function updateNotifications() {
             const now = new Date();
-            const today = now.toLocaleDateString();
             
             // Today's Purchases
             const pList = document.getElementById('purchaseNotifs');
@@ -1183,7 +1181,6 @@
 
             // New Reviews (today)
             const rList = document.getElementById('reviewNotifs');
-            // This will be updated by the reviews listener
             const reviewCount = parseInt(document.getElementById('totalReviews').textContent || '0');
             document.getElementById('reviewBadge').textContent = reviewCount;
             
@@ -1201,16 +1198,15 @@
             let hasDeletions = false;
             
             for (const item of allItems) {
-                if (item.scheduledDelete) {
+                if (item.scheduledDelete && !item.deleted) {
                     const deleteDate = item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete);
                     if (deleteDate <= now) {
-                        // Delete from Firestore
-                        batch.delete(doc(db, 'items', item.id));
-                        
-                        // Queue Cloudinary deletion
-                        if (item.imagePublicId) {
-                            await deleteFromCloudinary(item.imagePublicId);
-                        }
+                        // Soft delete - mark as deleted
+                        batch.update(doc(db, 'items', item.id), {
+                            deleted: true,
+                            deletedAt: serverTimestamp(),
+                            isActive: false
+                        });
                         
                         // Log deletion
                         const logRef = doc(collection(db, 'deletionLogs'));
@@ -1245,22 +1241,24 @@
         }
 
         // Initialize
-        const unsubscribeAuth = checkAuth();
-        subscribeToItems();
-        
-        // Check scheduled deletions every minute
-        setInterval(checkScheduledDeletions, 60000);
-        
-        // Initial check
-        setTimeout(checkScheduledDeletions, 2000);
-        
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (itemsUnsubscribe) itemsUnsubscribe();
-            if (reviewsUnsubscribe) reviewsUnsubscribe();
-            if (purchasesUnsubscribe) purchasesUnsubscribe();
-            if (unsubscribeAuth) unsubscribeAuth();
-        });
+        if (!checkAuth()) {
+            // Auth failed, page will redirect
+        } else {
+            subscribeToItems();
+            
+            // Check scheduled deletions every minute
+            setInterval(checkScheduledDeletions, 60000);
+            
+            // Initial check
+            setTimeout(checkScheduledDeletions, 2000);
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                if (itemsUnsubscribe) itemsUnsubscribe();
+                if (reviewsUnsubscribe) reviewsUnsubscribe();
+                if (purchasesUnsubscribe) purchasesUnsubscribe();
+            });
+        }
     </script>
 </body>
 </html>
