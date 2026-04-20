@@ -6,44 +6,7 @@
     <title>Order | Quincy Fashion World</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { 
-            getFirestore, 
-            collection, 
-            onSnapshot,
-            query,
-            where,
-            orderBy,
-            limit,
-            enableIndexedDbPersistence
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
-            authDomain: "quincy-fashion-world.firebaseapp.com",
-            projectId: "quincy-fashion-world",
-            storageBucket: "quincy-fashion-world.firebasestorage.app",
-            messagingSenderId: "902712490347",
-            appId: "1:902712490347:web:101d4882d7f1781df1f42e"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        // Enable offline persistence
-        enableIndexedDbPersistence(db).catch(err => {
-            console.log('Persistence error:', err.code);
-        });
-        
-        window.firebaseDb = db;
-        window.firestoreModules = {
-            collection, onSnapshot, query, where, orderBy, limit
-        };
-    </script>
-    
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -205,7 +168,7 @@
             box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
         }
 
-        /* Items Grid - Modern Marketplace Style */
+        /* Items Grid */
         .items-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -236,7 +199,7 @@
         }
 
         .item-card.selected::after {
-            content: '\\f00c';
+            content: '\f00c';
             font-family: 'Font Awesome 6 Free';
             font-weight: 900;
             position: absolute;
@@ -479,6 +442,33 @@
             100% { background-position: -200% 0; }
         }
 
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--gold);
+            color: var(--deep-purple);
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 10000;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .toast.active {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.error {
+            background: #ff4757;
+            color: white;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .main-content {
@@ -529,7 +519,7 @@
             <button class="filter-btn" onclick="filterItems('sneakers')">Sneakers</button>
         </div>
 
-        <!-- Available Items Section - Shows Admin Uploaded Items -->
+        <!-- Available Items Section -->
         <div id="availableItemsSection">
             <div class="section-header">
                 <i class="fas fa-sparkles"></i>
@@ -558,11 +548,42 @@
         </button>
     </div>
 
+    <div class="toast" id="toast"></div>
+
     <script type="module">
-        const { collection, onSnapshot, query, where, orderBy, limit } = window.firestoreModules;
-        const db = window.firebaseDb;
-        
-        // Create stars
+        // ============================================
+        // FIREBASE IMPORTS & CONFIGURATION
+        // ============================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            onSnapshot,
+            query,
+            orderBy,
+            enableIndexedDbPersistence
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
+            authDomain: "quincy-fashion-world.firebaseapp.com",
+            projectId: "quincy-fashion-world",
+            storageBucket: "quincy-fashion-world.firebasestorage.app",
+            messagingSenderId: "902712490347",
+            appId: "1:902712490347:web:101d4882d7f1781df1f42e"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Enable offline persistence
+        enableIndexedDbPersistence(db).catch(err => {
+            console.log('Persistence error:', err.code);
+        });
+
+        // ============================================
+        // STARS BACKGROUND
+        // ============================================
         function createStars() {
             const container = document.getElementById('stars');
             for (let i = 0; i < 100; i++) {
@@ -576,82 +597,91 @@
         }
         createStars();
 
+        // ============================================
+        // CART & ITEMS STATE
+        // ============================================
         let selectedItems = JSON.parse(localStorage.getItem('selectedItems') || '[]');
         let currentFilter = 'all';
         let allItems = [];
         let itemsUnsubscribe = null;
 
-        // Real-time items listener with automatic cleanup
+        // ============================================
+        // REAL-TIME ITEMS LISTENER
+        // ============================================
         function subscribeToItems() {
-            const now = new Date();
-            
-            // Query: active items that haven't expired
-            const q = query(
-                collection(db, 'items'),
-                where('isActive', '==', true),
-                orderBy('createdAt', 'desc')
-            );
-            
+            // Use simple query without where to avoid composite index issues
+            const q = query(collection(db, 'items'), orderBy('createdAt', 'desc'));
+
             itemsUnsubscribe = onSnapshot(q, (snapshot) => {
                 const newItems = [];
+                const now = new Date();
+
                 snapshot.forEach((doc) => {
                     const item = { id: doc.id, ...doc.data() };
-                    
-                    // Check if item has expired (client-side validation)
+
+                    // Client-side filtering for active, non-deleted, non-expired items
+                    if (item.deleted === true) return;
+                    if (item.isActive === false) return;
+
+                    // Check expiration
                     if (item.scheduledDelete) {
-                        const deleteDate = item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete);
-                        if (deleteDate <= now) {
-                            return; // Skip expired items
-                        }
+                        const deleteDate = item.scheduledDelete.toDate ? 
+                            item.scheduledDelete.toDate() : new Date(item.scheduledDelete);
+                        if (deleteDate <= now) return;
                     }
-                    
+
                     newItems.push(item);
                 });
-                
+
                 allItems = newItems;
-                
+
                 // Validate cart - remove items that no longer exist or expired
                 validateCart();
-                
+
                 // Render items
                 renderItems();
                 updateCartUI();
-                
+
             }, (error) => {
                 console.error('Items listener error:', error);
-                showError('Failed to load items. Please refresh.');
+                showToast('Failed to load items. Please refresh.', 'error');
             });
         }
 
         function validateCart() {
             const activeIds = allItems.map(item => item.id);
             const originalCount = selectedItems.length;
-            
+
+            const removedItems = [];
             selectedItems = selectedItems.filter(item => {
                 const stillExists = activeIds.includes(item.id);
                 if (!stillExists) {
-                    console.log('Removing deleted/expired item from cart:', item.name);
+                    removedItems.push(item.name);
                 }
                 return stillExists;
             });
-            
+
             if (selectedItems.length !== originalCount) {
                 localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
-                showToast('Some items in your cart are no longer available and have been removed');
+                if (removedItems.length > 0) {
+                    showToast(`${removedItems.length} item(s) removed from cart (no longer available)`, 'error');
+                }
             }
         }
 
+        // ============================================
+        // RENDER ITEMS
+        // ============================================
         function renderItems() {
             const grid = document.getElementById('itemsGrid');
-            const section = document.getElementById('availableItemsSection');
-            
+
             // Filter items
             const filteredItems = currentFilter === 'all' 
                 ? allItems 
                 : allItems.filter(item => item.category === currentFilter);
-            
+
             document.getElementById('availableCount').textContent = filteredItems.length + ' items';
-            
+
             if (filteredItems.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-state" style="grid-column: 1/-1;">
@@ -673,7 +703,8 @@
                         <img src="${item.thumbnailUrl || item.imageUrl}" 
                              alt="${item.name}" 
                              class="item-image"
-                             loading="lazy">
+                             loading="lazy"
+                             onerror="this.src='${item.imageUrl}'">
                         <div class="item-info">
                             <div class="item-name">${item.name}</div>
                             <div class="item-category">${item.category || 'New Arrival'}</div>
@@ -684,14 +715,21 @@
             }).join('');
         }
 
+        // ============================================
+        // TOGGLE ITEM SELECTION
+        // ============================================
         window.toggleItem = function(id) {
             const item = allItems.find(i => i.id === id);
-            if (!item) return;
-            
+            if (!item) {
+                showToast('Item not found', 'error');
+                return;
+            }
+
             const index = selectedItems.findIndex(si => si.id === id);
-            
+
             if (index > -1) {
                 selectedItems.splice(index, 1);
+                showToast(`Removed "${item.name}" from cart`);
             } else {
                 selectedItems.push({
                     id: item.id,
@@ -699,13 +737,14 @@
                     image: item.imageUrl,
                     thumbnail: item.thumbnailUrl,
                     category: item.category || 'general',
-                    price: item.price
+                    price: item.price || 0
                 });
+                showToast(`Added "${item.name}" to cart`);
             }
-            
+
             localStorage.setItem('selectedItems', JSON.stringify(selectedItems));
             updateCartUI();
-            
+
             // Update card visual state without re-rendering
             const card = document.querySelector(`[data-id="${id}"]`);
             if (card) {
@@ -715,11 +754,28 @@
                     card.classList.add('selected');
                 }
             }
-        }
+        };
 
+        // ============================================
+        // FILTER ITEMS
+        // ============================================
+        window.filterItems = function(category) {
+            currentFilter = category;
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            renderItems();
+        };
+
+        // ============================================
+        // CART UI
+        // ============================================
         function updateCartUI() {
             document.getElementById('cartCount').textContent = selectedItems.length;
-            
+
             const proceedBtn = document.getElementById('proceedBtn');
             if (selectedItems.length > 0) {
                 proceedBtn.classList.add('visible');
@@ -728,73 +784,43 @@
             }
         }
 
-        window.filterItems = function(category) {
-            currentFilter = category;
-            
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            renderItems();
-        }
-
+        // ============================================
+        // NAVIGATION
+        // ============================================
         window.proceedToPurchase = function() {
             if (selectedItems.length === 0) {
-                alert('Please select at least one item');
+                showToast('Please select at least one item', 'error');
                 return;
             }
             window.location.href = 'purchase.html';
-        }
+        };
 
         window.goHome = function() {
             window.location.href = 'index.html';
-        }
+        };
 
-        function showToast(message) {
-            // Simple toast implementation
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                top: 100px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: var(--gold);
-                color: var(--deep-purple);
-                padding: 15px 30px;
-                border-radius: 10px;
-                font-weight: 600;
-                z-index: 10000;
-                animation: slideDown 0.3s ease;
-            `;
+        // ============================================
+        // TOAST NOTIFICATIONS
+        // ============================================
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
             toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            toast.className = 'toast active ' + type;
+
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
         }
 
-        function showError(message) {
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                top: 100px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: #ff4757;
-                color: white;
-                padding: 15px 30px;
-                border-radius: 10px;
-                font-weight: 600;
-                z-index: 10000;
-            `;
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 5000);
-        }
+        // Make showToast available globally for onclick handlers
+        window.showToast = showToast;
 
-        // Initialize
+        // ============================================
+        // INITIALIZATION
+        // ============================================
         subscribeToItems();
         updateCartUI();
-        
+
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (itemsUnsubscribe) itemsUnsubscribe();
