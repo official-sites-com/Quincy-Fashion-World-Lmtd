@@ -6,13 +6,52 @@
     <title>Quincy Fashion World | Premium Fashion</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
+            authDomain: "quincy-fashion-world.firebaseapp.com",
+            projectId: "quincy-fashion-world",
+            storageBucket: "quincy-fashion-world.firebasestorage.app",
+            messagingSenderId: "902712490347",
+            appId: "1:902712490347:web:101d4882d7f1781df1f42e"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // Enable offline persistence to reduce reads
+        enableIndexedDbPersistence(db).catch(err => {
+            if (err.code == 'failed-precondition') {
+                console.log('Multiple tabs open, persistence enabled in first tab only');
+            } else if (err.code == 'unimplemented') {
+                console.log('Browser does not support persistence');
+            }
+        });
+        
+        // Make available globally
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseAuth = auth;
+        
+        // Monitor auth state
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            if (user) {
+                console.log('Admin logged in:', user.uid);
+            }
+        });
+    </script>
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         :root {
             --royal-purple: #2d0a31;
             --deep-purple: #1a0520;
@@ -34,18 +73,15 @@
         /* Animated Background */
         .stars {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
             z-index: 0;
         }
 
         .star {
             position: absolute;
-            width: 2px;
-            height: 2px;
+            width: 2px; height: 2px;
             background: var(--gold);
             border-radius: 50%;
             animation: twinkle 3s infinite;
@@ -60,8 +96,7 @@
         /* Navigation */
         nav {
             position: fixed;
-            top: 0;
-            width: 100%;
+            top: 0; width: 100%;
             padding: 20px 50px;
             display: flex;
             justify-content: space-between;
@@ -89,22 +124,15 @@
         .nav-links a::after {
             content: '';
             position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
+            bottom: -5px; left: 0;
+            width: 0; height: 2px;
             background: var(--gold);
             transition: width 0.3s ease;
         }
 
         .nav-links a:hover::after,
-        .nav-links a.active::after {
-            width: 100%;
-        }
-
-        .nav-links a:hover {
-            color: var(--gold);
-        }
+        .nav-links a.active::after { width: 100%; }
+        .nav-links a:hover { color: var(--gold); }
 
         /* Brand Name - Hidden Action Button (Long Press) */
         .brand-container {
@@ -116,9 +144,7 @@
             -webkit-touch-callout: none;
         }
 
-        .brand-container.pressing {
-            transform: scale(0.95);
-        }
+        .brand-container.pressing { transform: scale(0.95); }
 
         .brand-name {
             font-family: 'Playfair Display', serif;
@@ -299,8 +325,7 @@
         }
 
         .contact-icon {
-            width: 60px;
-            height: 60px;
+            width: 60px; height: 60px;
             background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
             border-radius: 50%;
             display: flex;
@@ -315,18 +340,14 @@
             margin-bottom: 5px;
         }
 
-        .contact-info p {
-            font-size: 1.1rem;
-        }
+        .contact-info p { font-size: 1.1rem; }
 
         /* Developer Login Modal */
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.9);
             z-index: 2000;
             justify-content: center;
@@ -334,9 +355,7 @@
             backdrop-filter: blur(10px);
         }
 
-        .modal-overlay.active {
-            display: flex;
-        }
+        .modal-overlay.active { display: flex; }
 
         .login-container {
             background: linear-gradient(135deg, var(--deep-purple) 0%, var(--royal-purple) 100%);
@@ -351,20 +370,13 @@
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .close-btn {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 20px; right: 20px;
             background: none;
             border: none;
             color: var(--gold);
@@ -373,9 +385,7 @@
             transition: transform 0.3s ease;
         }
 
-        .close-btn:hover {
-            transform: rotate(90deg);
-        }
+        .close-btn:hover { transform: rotate(90deg); }
 
         .login-header {
             text-align: center;
@@ -456,8 +466,7 @@
         /* Success Toast */
         .success-toast {
             position: fixed;
-            top: 30px;
-            right: 30px;
+            top: 30px; right: 30px;
             background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
             color: white;
             padding: 20px 30px;
@@ -471,19 +480,11 @@
         }
 
         @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
-        .success-toast.active {
-            display: flex;
-        }
+        .success-toast.active { display: flex; }
 
         /* Footer */
         footer {
@@ -495,9 +496,7 @@
             border-top: 1px solid rgba(212, 175, 55, 0.3);
         }
 
-        footer p {
-            color: rgba(255, 255, 255, 0.6);
-        }
+        footer p { color: rgba(255, 255, 255, 0.6); }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -505,23 +504,10 @@
                 grid-template-columns: 1fr;
                 text-align: center;
             }
-
-            .hero-text h1 {
-                font-size: 2.5rem;
-            }
-
-            nav {
-                padding: 15px 20px;
-            }
-
-            .nav-links {
-                gap: 20px;
-                font-size: 0.9rem;
-            }
-
-            .hero-images {
-                grid-template-columns: 1fr;
-            }
+            .hero-text h1 { font-size: 2.5rem; }
+            nav { padding: 15px 20px; }
+            .nav-links { gap: 20px; font-size: 0.9rem; }
+            .hero-images { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -672,7 +658,9 @@
         <span id="toastMessage">Operation successful!</span>
     </div>
 
-    <script>
+    <script type="module">
+        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
         // Create animated stars
         function createStars() {
             const starsContainer = document.getElementById('stars');
@@ -690,7 +678,7 @@
         // Long Press Detection for Brand Name
         const brandContainer = document.getElementById('brandContainer');
         let pressTimer;
-        const longPressDuration = 800; // milliseconds
+        const longPressDuration = 800;
 
         function startPress(e) {
             e.preventDefault();
@@ -706,17 +694,12 @@
             brandContainer.classList.remove('pressing');
         }
 
-        // Mouse events
         brandContainer.addEventListener('mousedown', startPress);
         brandContainer.addEventListener('mouseup', cancelPress);
         brandContainer.addEventListener('mouseleave', cancelPress);
-
-        // Touch events
         brandContainer.addEventListener('touchstart', startPress, {passive: false});
         brandContainer.addEventListener('touchend', cancelPress);
         brandContainer.addEventListener('touchmove', cancelPress);
-
-        // Prevent context menu on right click
         brandContainer.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             return false;
@@ -727,40 +710,48 @@
             document.getElementById('loginModal').classList.add('active');
         }
 
-        function closeDeveloperLogin() {
+        window.closeDeveloperLogin = function() {
             document.getElementById('loginModal').classList.remove('active');
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('loginForm').reset();
         }
 
-        function handleLogin(e) {
+        window.handleLogin = async function(e) {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            const validCredentials = [
-                { username: '07044696807', password: 'QuincyFW' },
-                { username: '08144967122', password: 'QuincyFW' }
-            ];
+            // Map phone numbers to Firebase Auth email format
+            const phoneToEmail = {
+                '07044696807': 'admin1@quincyfashion.com',
+                '08144967122': 'admin2@quincyfashion.com'
+            };
 
-            const isValid = validCredentials.some(
-                cred => cred.username === username && cred.password === password
-            );
+            const email = phoneToEmail[username];
+            
+            if (!email) {
+                document.getElementById('errorMessage').style.display = 'block';
+                return;
+            }
 
-            if (isValid) {
-                closeDeveloperLogin();
-                // Store login state
+            try {
+                const userCredential = await signInWithEmailAndPassword(window.firebaseAuth, email, password);
+                const user = userCredential.user;
+                
+                // Store admin session
                 localStorage.setItem('adminLoggedIn', 'true');
                 localStorage.setItem('adminUser', username);
-                // Redirect to admin panel
+                
+                closeDeveloperLogin();
                 window.location.href = 'admin.html';
-            } else {
+            } catch (error) {
+                console.error('Login error:', error);
                 document.getElementById('errorMessage').style.display = 'block';
             }
         }
 
         // Toast Notification
-        function showToast(message) {
+        window.showToast = function(message) {
             const toast = document.getElementById('successToast');
             document.getElementById('toastMessage').textContent = message;
             toast.classList.add('active');
