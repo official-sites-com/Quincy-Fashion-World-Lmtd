@@ -585,10 +585,9 @@
         function subscribeToItems() {
             const now = new Date();
             
-            // Query: active items that haven't expired
+            // Query: all items ordered by creation date (no composite index needed)
             const q = query(
                 collection(db, 'items'),
-                where('isActive', '==', true),
                 orderBy('createdAt', 'desc')
             );
             
@@ -596,6 +595,11 @@
                 const newItems = [];
                 snapshot.forEach((doc) => {
                     const item = { id: doc.id, ...doc.data() };
+
+                    // Skip inactive items (client-side filter since we removed the where clause)
+                    if (item.isActive === false) {
+                        return;
+                    }
                     
                     // Check if item has expired (client-side validation)
                     if (item.scheduledDelete) {
@@ -619,7 +623,7 @@
                 
             }, (error) => {
                 console.error('Items listener error:', error);
-                showError('Failed to load items. Please refresh.');
+                showError('Connection error. Please check your internet and refresh.');
             });
         }
 
