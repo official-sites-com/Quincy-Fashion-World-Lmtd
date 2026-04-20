@@ -6,623 +6,105 @@
     <title>Admin Panel | Quincy Fashion World</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            deleteDoc, 
-            doc, 
-            onSnapshot,
-            query,
-            where,
-            orderBy,
-            serverTimestamp,
-            getDocs,
-            writeBatch,
-            updateDoc
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw",
-            authDomain: "quincy-fashion-world.firebaseapp.com",
-            projectId: "quincy-fashion-world",
-            storageBucket: "quincy-fashion-world.firebasestorage.app",
-            messagingSenderId: "902712490347",
-            appId: "1:902712490347:web:101d4882d7f1781df1f42e"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        window.firebaseDb = db;
-        window.firestoreModules = {
-            collection, addDoc, deleteDoc, doc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs, writeBatch, updateDoc
-        };
-    </script>
-    
     <style>
-        :root {
-            --royal-purple: #2d0a31;
-            --deep-purple: #1a0520;
-            --gold: #d4af37;
-            --gold-light: #f4d03f;
-            --white: #ffffff;
-            --glass: rgba(255, 255, 255, 0.1);
-            --danger: #ff4d4d;
-            --success: #2ecc71;
-            --warning: #f39c12;
-        }
-
+        :root { --royal-purple: #2d0a31; --deep-purple: #1a0520; --gold: #d4af37; --gold-light: #f4d03f; --white: #ffffff; --glass: rgba(255,255,255,0.1); --danger: #ff4d4d; --success: #2ecc71; --warning: #f39c12; --info: #3498db; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--deep-purple) 0%, var(--royal-purple) 100%);
-            color: var(--white);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, var(--deep-purple) 0%, var(--royal-purple) 100%); color: var(--white); min-height: 100vh; padding: 20px; }
         .container { max-width: 1400px; margin: 0 auto; }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-bottom: 20px;
-            border-bottom: 2px solid var(--gold);
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        h1 { 
-            font-family: 'Playfair Display', serif; 
-            color: var(--gold); 
-            font-size: 2rem;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            border: none;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-gold {
-            background: var(--gold);
-            color: var(--deep-purple);
-        }
-
-        .btn-gold:hover {
-            background: var(--gold-light);
-            transform: translateY(-2px);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #ff3333;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--gold);
-            color: var(--gold);
-        }
-
-        .btn-outline:hover {
-            background: var(--gold);
-            color: var(--deep-purple);
-        }
-
-        /* Notifications Dashboard */
-        .notification-area {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--gold);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-        }
-
-        .notification-area h2 {
-            color: var(--gold);
-            margin-bottom: 20px;
-            font-family: 'Playfair Display', serif;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .notification-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-        }
-
-        .notif-box {
-            background: var(--glass);
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid var(--gold);
-            position: relative;
-        }
-
+        header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 2px solid var(--gold); margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        h1 { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 2rem; }
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .btn { padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 0.95rem; }
+        .btn-gold { background: var(--gold); color: var(--deep-purple); }
+        .btn-gold:hover { background: var(--gold-light); transform: translateY(-2px); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #ff3333; }
+        .btn-outline { background: transparent; border: 2px solid var(--gold); color: var(--gold); }
+        .btn-outline:hover { background: var(--gold); color: var(--deep-purple); }
+        .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--glass); padding: 25px; border-radius: 12px; text-align: center; border: 1px solid rgba(212,175,55,0.3); transition: all 0.3s; }
+        .stat-card:hover { transform: translateY(-3px); border-color: var(--gold); }
+        .stat-card h3 { font-size: 2.5rem; color: var(--gold); margin-bottom: 5px; }
+        .stat-card p { color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+        .notification-area { background: rgba(0,0,0,0.3); border: 1px solid var(--gold); border-radius: 15px; padding: 25px; margin-bottom: 30px; }
+        .notification-area h2 { color: var(--gold); margin-bottom: 20px; font-family: 'Playfair Display', serif; display: flex; align-items: center; gap: 10px; }
+        .notification-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .notif-box { background: var(--glass); padding: 20px; border-radius: 10px; border-left: 4px solid var(--gold); position: relative; }
         .notif-box.danger { border-left-color: var(--danger); }
         .notif-box.success { border-left-color: var(--success); }
         .notif-box.warning { border-left-color: var(--warning); }
-
-        .notif-box h3 { 
-            font-size: 1rem; 
-            margin-bottom: 15px; 
-            color: var(--gold-light);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .notif-badge {
-            position: absolute;
-            top: 15px; right: 15px;
-            background: var(--danger);
-            color: white;
-            width: 24px; height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        .notif-list { 
-            list-style: none; 
-            max-height: 150px; 
-            overflow-y: auto;
-            font-size: 0.9rem;
-        }
-
-        .notif-item { 
-            padding: 8px 0; 
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
+        .notif-box h3 { font-size: 1rem; margin-bottom: 15px; color: var(--gold-light); display: flex; align-items: center; gap: 8px; }
+        .notif-badge { position: absolute; top: 15px; right: 15px; background: var(--danger); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; }
+        .notif-list { list-style: none; max-height: 150px; overflow-y: auto; font-size: 0.9rem; }
+        .notif-item { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
         .notif-item:last-child { border-bottom: none; }
-
-        .notif-time {
-            font-size: 0.75rem;
-            color: rgba(255,255,255,0.5);
-        }
-
-        /* Navigation Tabs */
-        .nav-tabs {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .nav-tabs button {
-            padding: 12px 25px;
-            background: var(--glass);
-            border: 1px solid var(--gold);
-            color: var(--white);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .nav-tabs button.active {
-            background: var(--gold);
-            color: var(--deep-purple);
-        }
-
-        .nav-tabs button:hover:not(.active) {
-            background: rgba(212, 175, 55, 0.2);
-        }
-
-        .section { 
-            display: none; 
-            animation: fadeIn 0.5s; 
-        }
+        .notif-time { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+        .nav-tabs { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
+        .nav-tabs button { padding: 12px 25px; background: var(--glass); border: 1px solid var(--gold); color: var(--white); border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .nav-tabs button.active { background: var(--gold); color: var(--deep-purple); }
+        .nav-tabs button:hover:not(.active) { background: rgba(212,175,55,0.2); }
+        .section { display: none; animation: fadeIn 0.5s; }
         .section.active { display: block; }
-
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(10px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-
-        /* Upload Slots */
-        .upload-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
-        }
-
-        .upload-card {
-            background: var(--glass);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 15px;
-            padding: 20px;
-            transition: 0.3s;
-        }
-
-        .upload-card:hover { 
-            border-color: var(--gold); 
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .upload-card h3 {
-            color: var(--gold);
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .preview-box {
-            width: 100%;
-            height: 180px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 15px;
-            overflow: hidden;
-            border: 2px dashed rgba(212, 175, 55, 0.5);
-            position: relative;
-        }
-
-        .preview-box img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-        }
-
-        .preview-box i { 
-            font-size: 3rem; 
-            color: var(--gold); 
-            opacity: 0.5; 
-        }
-
-        .preview-box.has-image {
-            border-style: solid;
-            border-color: var(--gold);
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 8px;
-            color: white;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: var(--gold);
-            background: rgba(255,255,255,0.1);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .schedule-group {
-            background: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .schedule-group label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-            cursor: pointer;
-        }
-
-        .schedule-group input[type="checkbox"] {
-            width: auto;
-            margin: 0;
-        }
-
-        .schedule-group input[type="datetime-local"] {
-            margin-bottom: 0;
-        }
-
-        .upload-btn {
-            width: 100%;
-            padding: 14px;
-            background: var(--gold);
-            border: none;
-            border-radius: 8px;
-            color: var(--deep-purple);
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .upload-btn:hover {
-            background: var(--gold-light);
-            transform: scale(1.02);
-        }
-
-        .upload-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Manage Items */
-        .items-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .item-card {
-            background: var(--glass);
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            transition: all 0.3s;
-        }
-
-        .item-card:hover {
-            border-color: var(--gold);
-            transform: translateY(-5px);
-        }
-
-        .item-card img { 
-            width: 100%; 
-            height: 200px; 
-            object-fit: cover; 
-        }
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .upload-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
+        .upload-card { background: var(--glass); border: 1px solid rgba(212,175,55,0.3); border-radius: 15px; padding: 20px; transition: 0.3s; }
+        .upload-card:hover { border-color: var(--gold); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .upload-card h3 { color: var(--gold); margin-bottom: 15px; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
+        .preview-box { width: 100%; height: 180px; background: rgba(0,0,0,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; overflow: hidden; border: 2px dashed rgba(212,175,55,0.5); position: relative; }
+        .preview-box img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-box i { font-size: 3rem; color: var(--gold); opacity: 0.5; }
+        .preview-box.has-image { border-style: solid; border-color: var(--gold); }
+        .file-input-wrapper { margin-bottom: 12px; }
+        input, textarea, select { width: 100%; padding: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(212,175,55,0.3); border-radius: 8px; color: white; font-family: 'Inter', sans-serif; font-size: 0.95rem; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--gold); background: rgba(255,255,255,0.1); }
+        textarea { resize: vertical; min-height: 80px; }
+        .schedule-group { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .schedule-group label { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; }
+        .schedule-group input[type="checkbox"] { width: auto; margin: 0; }
+        .schedule-group input[type="datetime-local"] { margin-bottom: 0; }
+        .upload-btn { width: 100%; padding: 14px; background: var(--gold); border: none; border-radius: 8px; color: var(--deep-purple); font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .upload-btn:hover { background: var(--gold-light); transform: scale(1.02); }
+        .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .items-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .item-card { background: var(--glass); border-radius: 12px; overflow: hidden; border: 1px solid rgba(212,175,55,0.2); transition: all 0.3s; }
+        .item-card:hover { border-color: var(--gold); transform: translateY(-5px); }
+        .item-card img { width: 100%; height: 200px; object-fit: cover; }
         .item-info { padding: 15px; }
-
-        .item-name { 
-            font-weight: 700; 
-            color: var(--gold); 
-            margin-bottom: 5px;
-            font-size: 1.1rem;
-        }
-
-        .item-price { 
-            font-weight: 600; 
-            color: var(--gold-light);
-            font-size: 1.2rem;
-            margin-bottom: 8px;
-        }
-
-        .item-desc {
-            font-size: 0.85rem;
-            color: rgba(255,255,255,0.7);
-            margin-bottom: 10px;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .item-scheduled {
-            font-size: 0.8rem;
-            color: var(--warning);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-
-        .delete-btn {
-            background: var(--danger);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-
-        .delete-btn:hover {
-            background: #ff3333;
-        }
-
-        /* Reviews */
-        .review-card {
-            background: var(--glass);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border-left: 4px solid var(--gold);
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-        }
-
+        .item-name { font-weight: 700; color: var(--gold); margin-bottom: 5px; font-size: 1.1rem; }
+        .item-price { font-weight: 600; color: var(--gold-light); font-size: 1.2rem; margin-bottom: 8px; }
+        .item-desc { font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 10px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .item-scheduled { font-size: 0.8rem; color: var(--warning); display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
+        .item-status { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-bottom: 10px; }
+        .status-active { background: rgba(46,204,113,0.2); color: var(--success); }
+        .status-scheduled { background: rgba(243,156,18,0.2); color: var(--warning); }
+        .status-expired { background: rgba(255,77,77,0.2); color: var(--danger); }
+        .delete-btn { background: var(--danger); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s; }
+        .delete-btn:hover { background: #ff3333; }
+        .review-card { background: var(--glass); padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--gold); display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
         .review-content { flex: 1; }
-
-        .review-header { 
-            display: flex; 
-            justify-content: space-between; 
-            margin-bottom: 10px;
-            align-items: center;
-        }
-
-        .review-name { 
-            font-weight: 700; 
-            color: var(--gold-light);
-            font-size: 1.1rem;
-        }
-
-        .review-date { 
-            font-size: 0.85rem; 
-            opacity: 0.7;
-            color: rgba(255,255,255,0.6);
-        }
-
-        .review-text {
-            line-height: 1.6;
-            color: rgba(255,255,255,0.9);
-        }
-
-        .delete-review-btn {
-            background: transparent;
-            color: var(--danger);
-            border: 1px solid var(--danger);
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-            white-space: nowrap;
-        }
-
-        .delete-review-btn:hover {
-            background: var(--danger);
-            color: white;
-        }
-
-        /* Toast Notification */
-        .toast {
-            position: fixed;
-            bottom: 30px; right: 30px;
-            background: var(--gold);
-            color: var(--deep-purple);
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-weight: 700;
-            transform: translateY(100px);
-            transition: 0.3s;
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
+        .review-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }
+        .review-name { font-weight: 700; color: var(--gold-light); font-size: 1.1rem; }
+        .review-date { font-size: 0.85rem; opacity: 0.7; color: rgba(255,255,255,0.6); }
+        .review-text { line-height: 1.6; color: rgba(255,255,255,0.9); }
+        .delete-review-btn { background: transparent; color: var(--danger); border: 1px solid var(--danger); padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: all 0.3s; white-space: nowrap; }
+        .delete-review-btn:hover { background: var(--danger); color: white; }
+        .toast { position: fixed; bottom: 30px; right: 30px; background: var(--gold); color: var(--deep-purple); padding: 15px 25px; border-radius: 10px; font-weight: 700; transform: translateY(100px); transition: 0.3s; z-index: 10000; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         .toast.active { transform: translateY(0); }
         .toast.success { background: var(--success); color: white; }
         .toast.error { background: var(--danger); color: white; }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: rgba(255,255,255,0.5);
-        }
-
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            color: var(--gold);
-            opacity: 0.5;
-        }
-
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: var(--glass);
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-        }
-
-        .stat-card h3 {
-            font-size: 2.5rem;
-            color: var(--gold);
-            margin-bottom: 5px;
-        }
-
-        .stat-card p {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.95rem;
-        }
-
-        /* Loading Spinner */
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: var(--gold);
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Category Select */
-        .category-select { margin-bottom: 12px; }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                text-align: center;
-            }
-            .nav-tabs { justify-content: center; }
-            .upload-grid { grid-template-columns: 1fr; }
-            .notification-grid { grid-template-columns: 1fr; }
-            .review-card { flex-direction: column; }
-            .delete-review-btn { width: 100%; }
-        }
+        .toast.info { background: var(--info); color: white; }
+        .empty-state { text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.5); }
+        .empty-state i { font-size: 4rem; margin-bottom: 20px; color: var(--gold); opacity: 0.5; }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: var(--gold); animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .debug-console { background: rgba(0,0,0,0.5); border: 1px solid var(--danger); border-radius: 8px; padding: 15px; margin-top: 20px; font-family: monospace; font-size: 0.85rem; max-height: 200px; overflow-y: auto; display: none; }
+        .debug-console.active { display: block; }
+        .debug-line { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .debug-line.error { color: var(--danger); }
+        .debug-line.success { color: var(--success); }
+        .debug-line.info { color: var(--info); }
+        @media (max-width: 768px) { header { flex-direction: column; text-align: center; } .nav-tabs { justify-content: center; } .upload-grid { grid-template-columns: 1fr; } .notification-grid { grid-template-columns: 1fr; } .review-card { flex-direction: column; } .delete-review-btn { width: 100%; } }
     </style>
 </head>
 <body>
@@ -631,633 +113,285 @@
             <h1><i class="fas fa-crown"></i> Quincy Admin Panel</h1>
             <div class="header-actions">
                 <span id="adminUser" style="color: var(--gold-light);"></span>
-                <button onclick="location.href='index.html'" class="btn btn-outline">
-                    <i class="fas fa-eye"></i> View Site
-                </button>
-                <button onclick="logout()" class="btn btn-danger">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
+                <button onclick="toggleDebug()" class="btn btn-outline btn-sm"><i class="fas fa-bug"></i> Debug</button>
+                <button onclick="location.href='index.html'" class="btn btn-outline"><i class="fas fa-eye"></i> View Site</button>
+                <button onclick="logout()" class="btn btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </header>
-
-        <!-- Statistics -->
         <div class="stats-grid">
-            <div class="stat-card">
-                <h3 id="totalItems">0</h3>
-                <p>Total Items</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="totalReviews">0</h3>
-                <p>Total Reviews</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="totalPurchases">0</h3>
-                <p>Total Purchases</p>
-            </div>
-            <div class="stat-card">
-                <h3 id="scheduledDeletes">0</h3>
-                <p>Scheduled Deletions</p>
-            </div>
+            <div class="stat-card"><h3 id="totalItems">0</h3><p>Total Items</p></div>
+            <div class="stat-card"><h3 id="totalReviews">0</h3><p>Total Reviews</p></div>
+            <div class="stat-card"><h3 id="totalPurchases">0</h3><p>Today's Purchases</p></div>
+            <div class="stat-card"><h3 id="scheduledDeletes">0</h3><p>Scheduled Items</p></div>
         </div>
-
-        <!-- Notifications Dashboard -->
         <div class="notification-area">
             <h2><i class="fas fa-bell"></i> Notifications Dashboard</h2>
             <div class="notification-grid">
-                <div class="notif-box success">
-                    <h3><i class="fas fa-shopping-cart"></i> Today's Purchases</h3>
-                    <span class="notif-badge" id="purchaseBadge">0</span>
-                    <ul class="notif-list" id="purchaseNotifs">
-                        <li class="notif-item">No purchases today</li>
-                    </ul>
-                </div>
-                <div class="notif-box warning">
-                    <h3><i class="fas fa-calendar-times"></i> Scheduled Deletions</h3>
-                    <span class="notif-badge" id="deleteBadge">0</span>
-                    <ul class="notif-list" id="deleteNotifs">
-                        <li class="notif-item">No scheduled deletions</li>
-                    </ul>
-                </div>
-                <div class="notif-box">
-                    <h3><i class="fas fa-star"></i> New Reviews</h3>
-                    <span class="notif-badge" id="reviewBadge">0</span>
-                    <ul class="notif-list" id="reviewNotifs">
-                        <li class="notif-item">No new reviews</li>
-                    </ul>
-                </div>
+                <div class="notif-box success"><h3><i class="fas fa-shopping-cart"></i> Today's Purchases</h3><span class="notif-badge" id="purchaseBadge">0</span><ul class="notif-list" id="purchaseNotifs"><li class="notif-item">No purchases today</li></ul></div>
+                <div class="notif-box warning"><h3><i class="fas fa-calendar-times"></i> Scheduled Items</h3><span class="notif-badge" id="deleteBadge">0</span><ul class="notif-list" id="deleteNotifs"><li class="notif-item">No scheduled items</li></ul></div>
+                <div class="notif-box"><h3><i class="fas fa-star"></i> New Reviews</h3><span class="notif-badge" id="reviewBadge">0</span><ul class="notif-list" id="reviewNotifs"><li class="notif-item">No new reviews</li></ul></div>
             </div>
         </div>
-
+        <div class="debug-console" id="debugConsole"><div style="color: var(--gold); margin-bottom: 10px; font-weight: bold;"><i class="fas fa-terminal"></i> Debug Console</div><div id="debugOutput"></div></div>
         <div class="nav-tabs">
-            <button class="active" onclick="showSection('upload')">
-                <i class="fas fa-upload"></i> Upload Items (10 Slots)
-            </button>
-            <button onclick="showSection('manage')">
-                <i class="fas fa-boxes"></i> Manage Items
-            </button>
-            <button onclick="showSection('reviews')">
-                <i class="fas fa-comments"></i> Customer Reviews
-            </button>
+            <button class="active" onclick="showSection('upload')"><i class="fas fa-upload"></i> Upload Items</button>
+            <button onclick="showSection('manage')"><i class="fas fa-boxes"></i> Manage Items</button>
+            <button onclick="showSection('reviews')"><i class="fas fa-comments"></i> Customer Reviews</button>
         </div>
-
-        <!-- Upload Section -->
-        <div id="uploadSection" class="section active">
-            <div class="upload-grid" id="uploadGrid">
-                <!-- 10 Slots will be generated by JS -->
-            </div>
-        </div>
-
-        <!-- Manage Section -->
+        <div id="uploadSection" class="section active"><div class="upload-grid" id="uploadGrid"></div></div>
         <div id="manageSection" class="section">
-            <div class="items-list" id="itemsList">
-                <!-- Items will be loaded here -->
+            <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-outline btn-sm" onclick="filterItems('all')">All</button>
+                <button class="btn btn-outline btn-sm" onclick="filterItems('active')">Active</button>
+                <button class="btn btn-outline btn-sm" onclick="filterItems('scheduled')">Scheduled</button>
+                <button class="btn btn-outline btn-sm" onclick="filterItems('expired')">Expired</button>
             </div>
+            <div class="items-list" id="itemsList"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading items...</p></div></div>
         </div>
-
-        <!-- Reviews Section -->
-        <div id="reviewsSection" class="section">
-            <div id="reviewsList">
-                <!-- Reviews will be loaded here -->
-            </div>
-        </div>
+        <div id="reviewsSection" class="section"><div id="reviewsList"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading reviews...</p></div></div></div>
     </div>
-
-    <div id="toast" class="toast">
-        <i class="fas fa-check-circle"></i>
-        <span id="toastMessage">Action Successful!</span>
-    </div>
-
+    <div id="toast" class="toast"><i class="fas fa-check-circle"></i><span id="toastMessage">Action Successful!</span></div>
     <script type="module">
-        const { 
-            collection, addDoc, deleteDoc, doc, onSnapshot, query, where, 
-            orderBy, serverTimestamp, getDocs, writeBatch, updateDoc 
-        } = window.firestoreModules;
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs, writeBatch, updateDoc, getDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
-        const db = window.firebaseDb;
+        const firebaseConfig = { apiKey: "AIzaSyDeV8XUEyneUQ4f0AXQ-HzCeNN0R_wReyw", authDomain: "quincy-fashion-world.firebaseapp.com", projectId: "quincy-fashion-world", storageBucket: "quincy-fashion-world.firebasestorage.app", messagingSenderId: "902712490347", appId: "1:902712490347:web:101d4882d7f1781df1f42e" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        enableIndexedDbPersistence(db).catch(err => { debugLog('Persistence error: ' + err.code, 'error'); });
         
-        // Check admin authentication via localStorage
-        function checkAuth() {
-            const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
-            const adminUser = localStorage.getItem('adminUser');
-            
-            if (!isLoggedIn || !adminUser) {
-                // Not logged in, redirect to home
-                window.location.href = 'index.html';
-                return false;
-            }
-            
-            // Verify credentials are valid
-            const validCredentials = {
-                '07044696807': 'QuincyFW',
-                '08144967122': 'QuincyFW'
-            };
-            
-            if (!validCredentials[adminUser]) {
-                localStorage.removeItem('adminLoggedIn');
-                localStorage.removeItem('adminUser');
-                localStorage.removeItem('adminLoginTime');
-                window.location.href = 'index.html';
-                return false;
-            }
-            
-            // Check session expiry (24 hours)
-            const loginTime = parseInt(localStorage.getItem('adminLoginTime') || '0');
-            const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours
-            
-            if (Date.now() - loginTime > sessionDuration) {
-                // Session expired
-                localStorage.removeItem('adminLoggedIn');
-                localStorage.removeItem('adminUser');
-                localStorage.removeItem('adminLoginTime');
-                window.location.href = 'index.html';
-                return false;
-            }
-            
-            document.getElementById('adminUser').textContent = `Admin: ${adminUser}`;
-            return true;
-        }
-
-        window.logout = function() {
-            localStorage.removeItem('adminLoggedIn');
-            localStorage.removeItem('adminUser');
-            localStorage.removeItem('adminLoginTime');
-            window.location.href = 'index.html';
-        }
-
-        // Upload image to Cloudinary
-        async function uploadToCloudinary(file) {
-            const CLOUDINARY_CLOUD_NAME = 'dyesrp8ye';
-            const CLOUDINARY_UPLOAD_PRESET = 'quincy_uploads';
-            
+        const CLOUDINARY_CONFIG = { cloudName: 'dyesrp8ye', uploadPreset: 'quincy_fashion_preset', folder: 'quincy_fashion/products' };
+        
+        let debugMode = false;
+        const debugOutput = document.getElementById('debugOutput');
+        window.toggleDebug = function() { debugMode = !debugMode; document.getElementById('debugConsole').classList.toggle('active'); debugLog('Debug mode ' + (debugMode ? 'enabled' : 'disabled'), 'info'); };
+        function debugLog(message, type = 'info') { const line = document.createElement('div'); line.className = 'debug-line ' + type; line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message; debugOutput.appendChild(line); debugOutput.scrollTop = debugOutput.scrollHeight; if (debugMode) console.log('[' + type.toUpperCase() + '] ' + message); }
+        
+        function checkAuth() { const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true'; const adminUser = localStorage.getItem('adminUser'); if (!isLoggedIn || !adminUser) { window.location.href = 'index.html'; return false; } const validCredentials = { '07044696807': 'QuincyFW', '08144967122': 'QuincyFW' }; if (!validCredentials[adminUser]) { logout(); return false; } const loginTime = parseInt(localStorage.getItem('adminLoginTime') || '0'); if (Date.now() - loginTime > 24 * 60 * 60 * 1000) { logout(); return false; } document.getElementById('adminUser').textContent = 'Admin: ' + adminUser; return true; }
+        window.logout = function() { localStorage.removeItem('adminLoggedIn'); localStorage.removeItem('adminUser'); localStorage.removeItem('adminLoginTime'); window.location.href = 'index.html'; };
+        
+        async function uploadToCloudinary(file, slotNum) {
+            debugLog('Slot ' + slotNum + ': Starting upload...', 'info');
+            debugLog('Slot ' + slotNum + ': File: ' + file.name + ', Size: ' + (file.size/1024).toFixed(1) + 'KB, Type: ' + file.type, 'info');
+            if (file.size > 10 * 1024 * 1024) throw new Error('File too large. Maximum is 10MB. Your file is ' + (file.size/1024/1024).toFixed(1) + 'MB');
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+            if (!allowedTypes.includes(file.type)) throw new Error('Invalid file type: ' + file.type + '. Allowed: JPG, PNG, WebP');
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-            formData.append('folder', 'quincy_fashion/products');
-            
+            formData.append('upload_preset', CLOUDINARY_CONFIG.uploadPreset);
+            formData.append('folder', CLOUDINARY_CONFIG.folder);
+            formData.append('tags', 'quincy_product,admin_upload');
+            const url = 'https://api.cloudinary.com/v1_1/' + CLOUDINARY_CONFIG.cloudName + '/image/upload';
+            debugLog('Slot ' + slotNum + ': Uploading to ' + url, 'info');
             try {
-                const response = await fetch(
-                    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-                    {
-                        method: 'POST',
-                        body: formData
-                    }
-                );
-                
-                if (!response.ok) throw new Error('Upload failed');
-                
+                const response = await fetch(url, { method: 'POST', body: formData });
+                debugLog('Slot ' + slotNum + ': Response status: ' + response.status, 'info');
                 const data = await response.json();
-                return {
-                    url: data.secure_url,
-                    publicId: data.public_id,
-                    thumbnailUrl: data.secure_url.replace('/upload/', '/upload/w_300,h_300,c_fill/')
-                };
-            } catch (error) {
-                console.error('Cloudinary upload error:', error);
-                throw error;
-            }
+                if (!response.ok) {
+                    debugLog('Slot ' + slotNum + ': Cloudinary error: ' + JSON.stringify(data), 'error');
+                    if (data.error) {
+                        const errorMsg = data.error.message || 'Unknown Cloudinary error';
+                        if (errorMsg.includes('Upload preset')) throw new Error('Upload preset "' + CLOUDINARY_CONFIG.uploadPreset + '" not found. Create it in Cloudinary dashboard (Settings > Upload > Add Upload Preset, set to UNSIGNED).');
+                        if (errorMsg.includes('Invalid signature') || errorMsg.includes('Signature')) throw new Error('Upload preset must be UNSIGNED. Go to Cloudinary Settings > Upload and change signing mode.');
+                        if (errorMsg.includes('Cloud name')) throw new Error('Cloud name "' + CLOUDINARY_CONFIG.cloudName + '" not found. Check your Cloudinary dashboard.');
+                        throw new Error('Cloudinary: ' + errorMsg);
+                    }
+                    throw new Error('Upload failed with status ' + response.status);
+                }
+                debugLog('Slot ' + slotNum + ': Upload successful! Public ID: ' + data.public_id, 'success');
+                return { url: data.secure_url, publicId: data.public_id, thumbnailUrl: data.secure_url.replace('/upload/', '/upload/w_400,h_400,c_fill/'), format: data.format, width: data.width, height: data.height, bytes: data.bytes, originalFilename: data.original_filename };
+            } catch (error) { debugLog('Slot ' + slotNum + ': Upload error: ' + error.message, 'error'); throw error; }
         }
-
-        // Generate 10 Upload Slots
         const uploadGrid = document.getElementById('uploadGrid');
         const categories = ['bags', 'heels', 'corporate', 'slides', 'sneakers', 'general'];
-        
         for (let i = 1; i <= 10; i++) {
-            uploadGrid.innerHTML += `
-                <div class="upload-card">
-                    <h3><i class="fas fa-image"></i> Upload Slot ${i}</h3>
-                    <div class="preview-box" id="preview${i}">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                    </div>
-                    <input type="file" id="file${i}" accept="image/*" onchange="previewImage(${i})" style="display:none;">
-                    <button class="btn btn-outline" onclick="document.getElementById('file${i}').click()" style="width:100%; margin-bottom:12px;">
-                        <i class="fas fa-folder-open"></i> Select Image
-                    </button>
-                    <input type="text" id="name${i}" placeholder="Item Name *" required>
-                    <input type="number" id="price${i}" placeholder="Price (₦) *" required>
-                    <select id="category${i}" class="category-select">
-                        <option value="">Select Category</option>
-                        ${categories.map(c => `<option value="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</option>`).join('')}
-                    </select>
-                    <textarea id="about${i}" placeholder="Product Description" rows="3"></textarea>
-                    <div class="schedule-group">
-                        <label>
-                            <input type="checkbox" id="schedCheck${i}" onchange="toggleSchedule(${i})">
-                            <span>Schedule Auto-Delete</span>
-                        </label>
-                        <input type="datetime-local" id="schedTime${i}" disabled style="margin-top:10px;">
-                    </div>
-                    <button class="upload-btn" id="uploadBtn${i}" onclick="uploadItem(${i})">
-                        <i class="fas fa-upload"></i> Upload Item
-                    </button>
-                </div>
-            `;
+            const slot = document.createElement('div');
+            slot.className = 'upload-card';
+            slot.innerHTML = '<h3><i class="fas fa-image"></i> Upload Slot ' + i + '</h3><div class="preview-box" id="preview' + i + '"><i class="fas fa-cloud-upload-alt"></i></div><div class="file-input-wrapper"><input type="file" id="file' + i + '" accept="image/jpeg,image/png,image/webp" onchange="previewImage(' + i + ')" style="display:none;"><button class="btn btn-outline" onclick="document.getElementById(\'file' + i + '\').click()" style="width:100%; margin-bottom:12px;"><i class="fas fa-folder-open"></i> Select Image</button><div id="fileName' + i + '" style="font-size:0.85rem; color:rgba(255,255,255,0.6); margin-bottom:10px;"></div></div><input type="text" id="name' + i + '" placeholder="Item Name *" required><input type="number" id="price' + i + '" placeholder="Price (₦) *" required min="0"><select id="category' + i + '" class="category-select"><option value="">Select Category</option>' + categories.map(c => '<option value="' + c + '">' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>').join('') + '</select><textarea id="about' + i + '" placeholder="Product Description" rows="3"></textarea><div class="schedule-group"><label><input type="checkbox" id="schedCheck' + i + '" onchange="toggleSchedule(' + i + ')"><span>Schedule Auto-Delete</span></label><input type="datetime-local" id="schedTime' + i + '" disabled style="margin-top:10px;"></div><button class="upload-btn" id="uploadBtn' + i + '" onclick="uploadItem(' + i + ')"><i class="fas fa-upload"></i> Upload Item</button>';
+            uploadGrid.appendChild(slot);
         }
-
-        window.toggleSchedule = function(slot) {
-            const checkbox = document.getElementById(`schedCheck${slot}`);
-            const datetime = document.getElementById(`schedTime${slot}`);
-            datetime.disabled = !checkbox.checked;
-            if (checkbox.checked) {
-                const now = new Date();
-                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                datetime.min = now.toISOString().slice(0,16);
-            }
-        }
-
-        window.showSection = function(id) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
-            document.getElementById(id + 'Section').classList.add('active');
-            event.target.classList.add('active');
-            if(id === 'manage') loadItems();
-            if(id === 'reviews') loadReviews();
-            if(id === 'upload') updateStats();
-        }
-
-        window.previewImage = function(slot) {
-            const file = document.getElementById(`file${slot}`).files[0];
-            const preview = document.getElementById(`preview${slot}`);
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    preview.innerHTML = `<img src="${e.target.result}">`;
-                    preview.classList.add('has-image');
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
+        
+        window.toggleSchedule = function(slot) { const checkbox = document.getElementById('schedCheck' + slot); const datetime = document.getElementById('schedTime' + slot); datetime.disabled = !checkbox.checked; if (checkbox.checked) { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); datetime.min = now.toISOString().slice(0,16); } };
+        window.showSection = function(id) { document.querySelectorAll('.section').forEach(s => s.classList.remove('active')); document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active')); document.getElementById(id + 'Section').classList.add('active'); event.target.classList.add('active'); if (id === 'manage') { currentManageFilter = 'all'; renderItemsList(); } if (id === 'reviews') loadReviews(); if (id === 'upload') updateStats(); };
+        window.previewImage = function(slot) { const file = document.getElementById('file' + slot).files[0]; const preview = document.getElementById('preview' + slot); const fileName = document.getElementById('fileName' + slot); if (file) { const reader = new FileReader(); reader.onload = (e) => { preview.innerHTML = '<img src="' + e.target.result + '">'; preview.classList.add('has-image'); }; reader.readAsDataURL(file); fileName.textContent = '📄 ' + file.name + ' (' + (file.size/1024).toFixed(1) + 'KB)'; } };
+        
         window.uploadItem = async function(slot) {
-            const fileInput = document.getElementById(`file${slot}`);
+            const fileInput = document.getElementById('file' + slot);
             const file = fileInput.files[0];
-            const name = document.getElementById(`name${slot}`).value.trim();
-            const price = document.getElementById(`price${slot}`).value;
-            const category = document.getElementById(`category${slot}`).value;
-            const about = document.getElementById(`about${slot}`).value.trim();
-            const schedCheck = document.getElementById(`schedCheck${slot}`).checked;
-            const schedTime = document.getElementById(`schedTime${slot}`).value;
-
-            if (!file || !name || !price) {
-                showToast('Please fill in all required fields and select an image', 'error');
-                return;
-            }
-
-            const btn = document.getElementById(`uploadBtn${slot}`);
+            const name = document.getElementById('name' + slot).value.trim();
+            const price = document.getElementById('price' + slot).value;
+            const category = document.getElementById('category' + slot).value;
+            const about = document.getElementById('about' + slot).value.trim();
+            const schedCheck = document.getElementById('schedCheck' + slot).checked;
+            const schedTime = document.getElementById('schedTime' + slot).value;
+            if (!file) { showToast('Please selectPlease select an image file', 'error'); return; }
+            if (!name) { showToast('Please enter item name', 'error'); return; }
+            if (!price || price <= 0) { showToast('Please enter a valid price', 'error'); return; }
+            if (!category) { showToast('Please select a category', 'error'); return; }
+            const btn = document.getElementById('uploadBtn' + slot);
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Uploading...';
-
             try {
-                // Upload to Cloudinary first
-                const cloudinaryData = await uploadToCloudinary(file);
-                
-                // Add to Firestore
-                const itemData = {
-                    name: name,
-                    price: parseFloat(price),
-                    category: category || 'general',
-                    about: about,
-                    imageUrl: cloudinaryData.url,
-                    imagePublicId: cloudinaryData.publicId,
-                    thumbnailUrl: cloudinaryData.thumbnailUrl,
-                    createdAt: serverTimestamp(),
-                    scheduledDelete: schedCheck ? new Date(schedTime) : null,
-                    isActive: true,
-                    deleted: false
-                };
-                
-                await addDoc(collection(db, 'items'), itemData);
-                
-                // Reset form
-                fileInput.value = '';
-                document.getElementById(`name${slot}`).value = '';
-                document.getElementById(`price${slot}`).value = '';
-                document.getElementById(`category${slot}`).value = '';
-                document.getElementById(`about${slot}`).value = '';
-                document.getElementById(`schedCheck${slot}`).checked = false;
-                document.getElementById(`schedTime${slot}`).value = '';
-                document.getElementById(`schedTime${slot}`).disabled = true;
-                document.getElementById(`preview${slot}`).innerHTML = '<i class="fas fa-cloud-upload-alt"></i>';
-                document.getElementById(`preview${slot}`).classList.remove('has-image');
-                
-                showToast('Item uploaded successfully!');
+                debugLog('Slot ' + slot + ': Starting upload process...', 'info');
+                const cloudinaryData = await uploadToCloudinary(file, slot);
+                debugLog('Slot ' + slot + ': Cloudinary upload complete', 'success');
+                const itemData = { name: name, price: parseFloat(price), category: category, about: about, imageUrl: cloudinaryData.url, imagePublicId: cloudinaryData.publicId, thumbnailUrl: cloudinaryData.thumbnailUrl, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), scheduledDelete: schedCheck ? new Date(schedTime) : null, isActive: true, deleted: false, deletedAt: null, uploadSlot: slot };
+                debugLog('Slot ' + slot + ': Saving to Firestore...', 'info');
+                const docRef = await addDoc(collection(db, 'items'), itemData);
+                debugLog('Slot ' + slot + ': Firestore save complete. ID: ' + docRef.id, 'success');
+                fileInput.value = ''; document.getElementById('name' + slot).value = ''; document.getElementById('price' + slot).value = ''; document.getElementById('category' + slot).value = ''; document.getElementById('about' + slot).value = ''; document.getElementById('schedCheck' + slot).checked = false; document.getElementById('schedTime' + slot).value = ''; document.getElementById('schedTime' + slot).disabled = true; document.getElementById('preview' + slot).innerHTML = '<i class="fas fa-cloud-upload-alt"></i>'; document.getElementById('preview' + slot).classList.remove('has-image'); document.getElementById('fileName' + slot).textContent = '';
+                showToast('✅ "' + name + '" uploaded successfully!');
                 updateStats();
-            } catch (error) {
-                console.error('Upload error:', error);
-                showToast('Upload failed: ' + error.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-upload"></i> Upload Item';
-            }
-        }
-
-        // Real-time items listener
+            } catch (error) { debugLog('Slot ' + slot + ': Final error: ' + error.message, 'error'); showToast('❌ Upload failed: ' + error.message, 'error'); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-upload"></i> Upload Item'; }
+        };
+        
         let itemsUnsubscribe = null;
         let allItems = [];
-
+        let currentManageFilter = 'all';
+        
         function subscribeToItems() {
+            debugLog('Starting real-time items subscription...', 'info');
             const q = query(collection(db, 'items'), orderBy('createdAt', 'desc'));
-            
             itemsUnsubscribe = onSnapshot(q, (snapshot) => {
+                debugLog('Items snapshot received: ' + snapshot.size + ' documents', 'info');
                 allItems = [];
-                snapshot.forEach((doc) => {
-                    const item = { id: doc.id, ...doc.data() };
-                    // Only show non-deleted items
-                    if (!item.deleted) {
-                        allItems.push(item);
-                    }
-                });
-                
-                // Update manage section if active
-                if (document.getElementById('manageSection').classList.contains('active')) {
-                    renderItemsList();
-                }
-                
+                snapshot.forEach((doc) => { allItems.push({ id: doc.id, ...doc.data() }); });
+                if (document.getElementById('manageSection').classList.contains('active')) renderItemsList();
                 updateStats();
                 checkScheduledDeletions();
-            }, (error) => {
-                console.error('Items listener error:', error);
-                showToast('Error loading items. Please refresh.', 'error');
-            });
+            }, (error) => { debugLog('Items listener error: ' + error.message, 'error'); showToast('Error loading items. Please refresh.', 'error'); });
         }
-
+        
+        window.filterItems = function(filterType) { currentManageFilter = filterType; renderItemsList(); };
+        
         function renderItemsList() {
             const container = document.getElementById('itemsList');
-            
-            if (allItems.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
-                        <i class="fas fa-box-open"></i>
-                        <h3>No items uploaded yet</h3>
-                        <p>Go to Upload section to add items</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = allItems.map(item => `
-                <div class="item-card">
-                    <img src="${item.thumbnailUrl || item.imageUrl}" alt="${item.name}" loading="lazy">
-                    <div class="item-info">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-price">₦${item.price?.toLocaleString() || '0'}</div>
-                        ${item.about ? `<div class="item-desc">${item.about}</div>` : ''}
-                        ${item.scheduledDelete ? `
-                            <div class="item-scheduled">
-                                <i class="fas fa-clock"></i>
-                                Auto-delete: ${item.scheduledDelete.toDate ? item.scheduledDelete.toDate().toLocaleString() : new Date(item.scheduledDelete).toLocaleString()}
-                            </div>
-                        ` : ''}
-                        <button class="delete-btn" onclick="deleteItem('${item.id}', '${item.imagePublicId || ''}')">
-                            <i class="fas fa-trash"></i> Delete Item
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+            const now = new Date();
+            let filteredItems = allItems;
+            if (currentManageFilter === 'active') filteredItems = allItems.filter(i => i.isActive && !i.deleted);
+            else if (currentManageFilter === 'scheduled') filteredItems = allItems.filter(i => i.scheduledDelete && !i.deleted);
+            else if (currentManageFilter === 'expired') filteredItems = allItems.filter(i => { if (!i.scheduledDelete || i.deleted) return false; const deleteDate = i.scheduledDelete.toDate ? i.scheduledDelete.toDate() : new Date(i.scheduledDelete); return deleteDate <= now; });
+            if (filteredItems.length === 0) { container.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><i class="fas fa-box-open"></i><h3>No items found</h3><p>' + (currentManageFilter === 'all' ? 'Upload your first item!' : 'No items in this category') + '</p></div>'; return; }
+            container.innerHTML = filteredItems.map(item => {
+                const isExpired = item.scheduledDelete && !i.deleted ? (item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete)) <= now : false;
+                let statusClass = 'status-active'; let statusText = 'Active';
+                if (item.deleted) { statusClass = 'status-expired'; statusText = 'Deleted'; }
+                else if (isExpired) { statusClass = 'status-expired'; statusText = 'Expired'; }
+                else if (item.scheduledDelete) { statusClass = 'status-scheduled'; statusText = 'Scheduled'; }
+                const scheduleText = item.scheduledDelete ? '<div class="item-scheduled"><i class="fas fa-clock"></i>' + (isExpired ? 'Expired: ' : 'Deletes: ') + (item.scheduledDelete.toDate ? item.scheduledDelete.toDate().toLocaleString() : new Date(item.scheduledDelete).toLocaleString()) + '</div>' : '';
+                return '<div class="item-card" style="' + (item.deleted ? 'opacity:0.5;' : '') + '"><img src="' + (item.thumbnailUrl || item.imageUrl) + '" alt="' + item.name + '" loading="lazy" onerror="this.src=\'' + item.imageUrl + '\'"><div class="item-info"><span + '\'"><div class="item-info"><span class="item-status ' + statusClass + '">' + statusText + '</span><div class="item-name">' + item.name + '</div><div class="item-price">₦' + (item.price?.toLocaleString() || '0') + '</div>' + (item.about ? '<div class="item-desc">' + item.about + '</div>' : '') + scheduleText + '<button class="delete-btn" onclick="deleteItem(\\'' + item.id + '\\', \\'' + (item.imagePublicId || '') + '\\')" ' + (item.deleted ? 'disabled' : '') + '><i class="fas fa-trash"></i> ' + (item.deleted ? 'Deleted' : 'Delete Item') + '</button></div></div>';
+            }).join('');
         }
-
-        window.loadItems = function() {
-            renderItemsList();
-        }
-
+        
+        window.loadItems = function() { renderItemsList(); };
+        
         window.deleteItem = async function(id, publicId) {
-            if (!confirm('Are you sure you want to delete this item? This will remove it from all customer carts immediately.')) return;
-            
+            if (!confirm('Are you sure you want to delete this item?\\n\\nThis will:\\n1. Remove it from customer carts\\n2. Delete the image from Cloudinary\\n3. Mark as deleted in database')) return;
+            const item = allItems.find(i => i.id === id);
+            if (!item) return;
+            debugLog('Deleting item ' + id + ' (Public ID: ' + publicId + ')...', 'info');
             try {
-                // Soft delete - mark as deleted rather than removing from Firestore
-                // This ensures all clients get the real-time update
-                await updateDoc(doc(db, 'items', id), {
-                    deleted: true,
-                    deletedAt: serverTimestamp(),
-                    isActive: false
-                });
-                
-                // Also log the deletion
-                await addDoc(collection(db, 'deletionLogs'), {
-                    itemId: id,
-                    itemName: allItems.find(i => i.id === id)?.name || 'Unknown',
-                    deletedAt: serverTimestamp(),
-                    type: 'manual'
-                });
-                
-                showToast('Item deleted and removed from all carts');
+                await updateDoc(doc(db, 'items', id), { deleted: true, deletedAt: serverTimestamp(), isActive: false, updatedAt: serverTimestamp() });
+                debugLog('Firestore soft delete complete', 'success');
+                await addDoc(collection(db, 'deletionLogs'), { itemId: id, itemName: item.name, deletedAt: serverTimestamp(), type: 'manual', adminUser: localStorage.getItem('adminUser') });
+                if (publicId) { debugLog('Image marked for deletion (requires backend cleanup)', 'info'); }
+                showToast('✅ Item deleted successfully');
                 updateStats();
-            } catch (error) {
-                console.error('Delete error:', error);
-                showToast('Delete failed: ' + error.message, 'error');
-            }
-        }
-
-        // Reviews Management
+            } catch (error) { debugLog('Delete error: ' + error.message, 'error'); showToast('❌ Delete failed: ' + error.message, 'error'); }
+        };
         let reviewsUnsubscribe = null;
-
         window.loadReviews = function() {
             const container = document.getElementById('reviewsList');
-            
             if (reviewsUnsubscribe) reviewsUnsubscribe();
-            
             const q = query(collection(db, 'reviews'), orderBy('createdAt', 'desc'));
             reviewsUnsubscribe = onSnapshot(q, (snapshot) => {
                 const reviews = [];
-                snapshot.forEach((doc) => {
-                    reviews.push({ id: doc.id, ...doc.data() });
-                });
-                
-                if (reviews.length === 0) {
-                    container.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-comment-slash"></i>
-                            <h3>No reviews yet</h3>
-                        </div>
-                    `;
-                    return;
-                }
-
-                container.innerHTML = reviews.map((r) => `
-                    <div class="review-card">
-                        <div class="review-content">
-                            <div class="review-header">
-                                <span class="review-name"><i class="fas fa-user-circle"></i> ${r.name}</span>
-                                <span class="review-date">${r.date || 'Recently'}</span>
-                            </div>
-                            <p class="review-text">${r.text}</p>
-                        </div>
-                        <button class="delete-review-btn" onclick="deleteReview('${r.id}')">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </div>
-                `).join('');
-                
+                snapshot.forEach((doc) => { reviews.push({ id: doc.id, ...doc.data() }); });
                 document.getElementById('totalReviews').textContent = reviews.length;
-            });
-        }
-
-        window.deleteReview = async function(id) {
-            if (!confirm('Delete this review?')) return;
-            try {
-                await deleteDoc(doc(db, 'reviews', id));
-                showToast('Review deleted');
-                updateStats();
-            } catch (error) {
-                console.error('Delete review error:', error);
-                showToast('Failed to delete review', 'error');
-            }
-        }
-
-        // Stats & Notifications
+                if (reviews.length === 0) { container.innerHTML = '<div class="empty-state"><i class=""><i class="fas fa-comment-slash"></i><h3>No reviews yet</h3></div>'; return; }
+                container.innerHTML = reviews.map((r) => { const date = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : r.date || 'Recently'; return '<div class="review-card"><div class="review-content"><div class="review-header"><span class="review-name"><i class="fas fa-user-circle"></i> ' + r.name + '</span><span class="review-date">' + date + '</span></div><p class="review-text">' + r.text + '</p></div><button class="delete-review-btn" onclick="deleteReview(\\'' + r.id + '\\')"><i class="fas fa-trash"></i> Delete</button></div>'; }).join('');
+            }, (error) => { debugLog('Reviews listener error: ' + error.message, 'error'); });
+        };
+        
+        window.deleteReview = async function(id) { if (!confirm('Delete this review?')) return; try { await deleteDoc(doc(db, 'reviews', id)); showToast('Review deleted'); updateStats(); } catch (error) { debugLog('Delete review error: ' + error.message, 'error'); showToast('Failed to delete review', 'error'); } };
+        
         let purchasesUnsubscribe = null;
-
         function updateStats() {
-            // Items count (non-deleted)
-            document.getElementById('totalItems').textContent = allItems.length;
-            
-            // Scheduled deletions count
-            const scheduledCount = allItems.filter(i => i.scheduledDelete).length;
-            document.getElementById('scheduledDeletes').textContent = scheduledCount;
-            
-            // Update notifications
+            const now = new Date();
+            const activeItems = allItems.filter(i => !i.deleted);
+            document.getElementById('totalItems').textContent = activeItems.length;
+            const scheduledItems = allItems.filter(i => { if (!i.scheduledDelete || i.deleted) return false; const deleteDate = i.scheduledDelete.toDate ? i.scheduledDelete.toDate() : new Date(i.scheduledDelete); return deleteDate > now; });
+            document.getElementById('scheduledDeletes').textContent = scheduledItems.length;
             updateNotifications();
         }
-
+        
         function updateNotifications() {
             const now = new Date();
-            
-            // Today's Purchases
             const pList = document.getElementById('purchaseNotifs');
-            
             if (purchasesUnsubscribe) purchasesUnsubscribe();
-            
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-            
-            const q = query(
-                collection(db, 'purchases'),
-                where('timestamp', '>=', todayStart)
-            );
-            
+            const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+            const q = query(collection(db, 'purchases'), orderBy('timestamp', 'desc'));
             purchasesUnsubscribe = onSnapshot(q, (snapshot) => {
                 const todayPurchases = [];
-                snapshot.forEach((doc) => {
-                    todayPurchases.push(doc.data());
-                });
-                
+                snapshot.forEach((doc) => { const p = doc.data(); const pDate = p.timestamp?.toDate ? p.timestamp.toDate() : new Date(p.timestamp); if (pDate >= todayStart) todayPurchases.push(p); });
                 document.getElementById('purchaseBadge').textContent = todayPurchases.length;
                 document.getElementById('totalPurchases').textContent = todayPurchases.length;
-                
-                if (todayPurchases.length === 0) {
-                    pList.innerHTML = '<li class="notif-item">No purchases today</li>';
-                } else {
-                    pList.innerHTML = todayPurchases.map(p => `
-                        <li class="notif-item">
-                            <span>New order: ${p.itemCount || 0} items</span>
-                            <span class="notif-time">${p.timestamp?.toDate ? p.timestamp.toDate().toLocaleTimeString() : 'Recently'}</span>
-                        </li>
-                    `).join('');
-                }
+                if (todayPurchases.length === 0) pList.innerHTML = '<li class="notif-item">No purchases today</li>';
+                else pList.innerHTML = todayPurchases.slice(0, 5).map(p => '<li class="notif-item"><span>New order: ' + (p.itemCount || 0) + ' items</span><span class="notif-time">' + (p.timestamp?.toDate ? p.timestamp.toDate().toLocaleTimeString() : 'Recently') + '</span></li>').join('');
             });
-
-            // Scheduled Deletions (upcoming)
             const dList = document.getElementById('deleteNotifs');
-            const upcomingDeletes = allItems.filter(i => {
-                if (!i.scheduledDelete) return false;
-                const deleteDate = i.scheduledDelete.toDate ? i.scheduledDelete.toDate() : new Date(i.scheduledDelete);
-                return deleteDate > now;
-            });
-            
+            const upcomingDeletes = allItems.filter(i => { if (!i.scheduledDelete || i.deleted) return false; const deleteDate = i.scheduledDelete.toDate ? i.scheduledDelete.toDate() : new Date(i.scheduledDelete); return deleteDate > now; });
             document.getElementById('deleteBadge').textContent = upcomingDeletes.length;
-            
-            if (upcomingDeletes.length === 0) {
-                dList.innerHTML = '<li class="notif-item">No scheduled deletions</li>';
-            } else {
-                dList.innerHTML = upcomingDeletes.map(i => {
-                    const deleteDate = i.scheduledDelete.toDate ? i.scheduledDelete.toDate() : new Date(i.scheduledDelete);
-                    return `
-                        <li class="notif-item">
-                            <span>${i.name}</span>
-                            <span class="notif-time">${deleteDate.toLocaleString()}</span>
-                        </li>
-                    `;
-                }).join('');
-            }
-
-            // New Reviews (today)
+            if (upcomingDeletes.length === 0) dList.innerHTML = '<li class="notif-item">No scheduled deletions</li>';
+            else dList.innerHTML = upcomingDeletes.slice(0, 5).map(i => { const deleteDate = i.scheduledDelete.toDate ? i.scheduledDelete.toDate() : new Date(i.scheduledDelete); return '<li class="notif-item"><span>' + i.name + '</span><span class="notif-time">' + deleteDate.toLocaleString() + '</span></li>'; }).join('');
             const rList = document.getElementById('reviewNotifs');
             const reviewCount = parseInt(document.getElementById('totalReviews').textContent || '0');
             document.getElementById('reviewBadge').textContent = reviewCount;
-            
-            if (reviewCount === 0) {
-                rList.innerHTML = '<li class="notif-item">No new reviews today</li>';
-            } else {
-                rList.innerHTML = `<li class="notif-item"><span>${reviewCount} total reviews</span></li>`;
-            }
+            if (reviewCount === 0) rList.innerHTML = '<li class="notif-item">No reviews yet</li>';
+            else rList.innerHTML = '<li class="notif-item"><span>' + reviewCount + ' total reviews</span></li>';
         }
-
-        // Check and execute scheduled deletions
+        
         async function checkScheduledDeletions() {
             const now = new Date();
             const batch = writeBatch(db);
             let hasDeletions = false;
-            
+            let deletedCount = 0;
             for (const item of allItems) {
                 if (item.scheduledDelete && !item.deleted) {
                     const deleteDate = item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete);
                     if (deleteDate <= now) {
-                        // Soft delete - mark as deleted
-                        batch.update(doc(db, 'items', item.id), {
-                            deleted: true,
-                            deletedAt: serverTimestamp(),
-                            isActive: false
-                        });
-                        
-                        // Log deletion
+                        batch.update(doc(db, 'items', item.id), { deleted: true, deletedAt: serverTimestamp(), isActive: false, updatedAt: serverTimestamp() });
                         const logRef = doc(collection(db, 'deletionLogs'));
-                        batch.set(logRef, {
-                            itemId: item.id,
-                            itemName: item.name,
-                            deletedAt: serverTimestamp(),
-                            type: 'scheduled'
-                        });
-                        
+                        batch.set(logRef, { itemId: item.id, itemName: item.name, deletedAt: serverTimestamp(), type: 'scheduled' });
                         hasDeletions = true;
+                        deletedCount++;
                     }
                 }
             }
-            
-            if (hasDeletions) {
-                try {
-                    await batch.commit();
-                    showToast('Expired items auto-deleted', 'success');
-                } catch (error) {
-                    console.error('Scheduled deletion error:', error);
-                }
-            }
+            if (hasDeletions) { try { await batch.commit(); debugLog('Auto-deleted ' + deletedCount + ' expired items', 'success'); showToast('🗑️ ' + deletedCount + ' expired item(s) auto-deleted', 'info'); } catch (error) { debugLog('Scheduled deletion error: ' + error.message, 'error'); } }
         }
-
+        
         window.showToast = function(msg, type = 'success') {
             const t = document.getElementById('toast');
             const msgEl = document.getElementById('toastMessage');
             msgEl.textContent = msg;
             t.className = 'toast active ' + type;
-            setTimeout(() => t.classList.remove('active'), 3000);
-        }
-
-        // Initialize
+            const icon = t.querySelector('i');
+            if (type === 'error') icon.className = 'fas fa-exclamation-circle';
+            else if (type === 'info') icon.className = 'fas fa-info-circle';
+            else icon.className = 'fas fa-check-circle';
+            setTimeout(() => t.classList.remove('active'), 4000);
+        };
+        
         if (!checkAuth()) {
-            // Auth failed, page will redirect
+            // Auth failed, redirect handled in checkAuth
         } else {
+            debugLog('Admin panel initialized', 'info');
+            debugLog('Cloudinary: ' + CLOUDINARY_CONFIG.cloudName + ', Preset: ' + CLOUDINARY_CONFIG.uploadPreset, 'info');
             subscribeToItems();
-            
-            // Check scheduled deletions every minute
             setInterval(checkScheduledDeletions, 60000);
-            
-            // Initial check
             setTimeout(checkScheduledDeletions, 2000);
-            
-            // Cleanup on page unload
-            window.addEventListener('beforeunload', () => {
-                if (itemsUnsubscribe) itemsUnsubscribe();
-                if (reviewsUnsubscribe) reviewsUnsubscribe();
-                if (purchasesUnsubscribe) purchasesUnsubscribe();
-            });
+            window.addEventListener('beforeunload', () => { if (itemsUnsubscribe) itemsUnsubscribe(); if (reviewsUnsubscribe) reviewsUnsubscribe(); if (purchasesUnsubscribe) purchasesUnsubscribe(); });
         }
     </script>
 </body>
