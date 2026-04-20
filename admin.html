@@ -1,4 +1,3 @@
-<!-- admin.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -614,31 +613,6 @@
         /* Category Select */
         .category-select { margin-bottom: 12px; }
 
-        /* Debug Panel */
-        .debug-panel {
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--danger);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .debug-panel.active { display: block; }
-
-        .debug-panel h4 {
-            color: var(--danger);
-            margin-bottom: 10px;
-        }
-
-        .debug-content {
-            font-family: monospace;
-            font-size: 0.85rem;
-            color: #ff9999;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             header {
@@ -667,12 +641,6 @@
                 </button>
             </div>
         </header>
-
-        <!-- Debug Panel for Upload Errors -->
-        <div class="debug-panel" id="debugPanel">
-            <h4><i class="fas fa-bug"></i> Upload Debug Info</h4>
-            <div class="debug-content" id="debugContent"></div>
-        </div>
 
         <!-- Statistics -->
         <div class="stats-grid">
@@ -764,10 +732,8 @@
     <script type="module">
         import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         
-        // FIXED: More robust Cloudinary configuration with fallback
         const CLOUDINARY_CLOUD_NAME = 'dyesrp8ye';
-        const CLOUDINARY_UPLOAD_PRESET = 'quincy_uploads';
-        
+        const CLOUDINARY_UPLOAD_PRESET = 'quincy_fashion_preset';
         const { 
             collection, addDoc, deleteDoc, doc, onSnapshot, query, where, 
             orderBy, serverTimestamp, getDocs, writeBatch 
@@ -776,15 +742,6 @@
         const db = window.firebaseDb;
         const auth = window.firebaseAuth;
         
-        // Debug helper
-        function logDebug(info) {
-            console.log('DEBUG:', info);
-            const debugPanel = document.getElementById('debugPanel');
-            const debugContent = document.getElementById('debugContent');
-            debugPanel.classList.add('active');
-            debugContent.textContent += `[${new Date().toLocaleTimeString()}] ${JSON.stringify(info, null, 2)}\n\n`;
-        }
-
         // Check authentication
         function checkAuth() {
             const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -809,14 +766,12 @@
             }
         }
 
-        // FIXED: Enhanced Cloudinary upload with better error handling and validation
+        // Upload image to Cloudinary
         async function uploadToCloudinary(file) {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
             formData.append('folder', 'quincy_fashion/products');
-            
-            logDebug({ action: 'Starting upload', fileName: file.name, fileSize: file.size, preset: CLOUDINARY_UPLOAD_PRESET });
             
             try {
                 const response = await fetch(
@@ -827,25 +782,15 @@
                     }
                 );
                 
-                logDebug({ action: 'Response received', status: response.status, statusText: response.statusText });
+                if (!response.ok) throw new Error('Upload failed');
                 
-                // FIXED: Always parse response body for detailed error info
                 const data = await response.json();
-                
-                if (!response.ok) {
-                    logDebug({ action: 'Upload failed', error: data });
-                    throw new Error(data.error?.message || `Upload failed with status ${response.status}: ${JSON.stringify(data)}`);
-                }
-                
-                logDebug({ action: 'Upload successful', publicId: data.public_id });
-                
                 return {
                     url: data.secure_url,
                     publicId: data.public_id,
                     thumbnailUrl: data.secure_url.replace('/upload/', '/upload/w_300,h_300,c_fill/')
                 };
             } catch (error) {
-                logDebug({ action: 'Upload exception', error: error.message, stack: error.stack });
                 console.error('Cloudinary upload error:', error);
                 throw error;
             }
@@ -853,7 +798,10 @@
 
         // Delete image from Cloudinary (requires backend signature in production)
         async function deleteFromCloudinary(publicId) {
+            // Note: In production, this should be done via backend to protect API secret
+            // For now, we'll track deleted IDs and clean up via scheduled function
             console.log('Marking for deletion:', publicId);
+            // Store in deletion queue for backend cleanup
             const deletionQueue = JSON.parse(localStorage.getItem('cloudinaryDeletionQueue') || '[]');
             deletionQueue.push({
                 publicId,
@@ -923,13 +871,6 @@
             const file = document.getElementById(`file${slot}`).files[0];
             const preview = document.getElementById(`preview${slot}`);
             if (file) {
-                // FIXED: Validate file size (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    showToast('Image too large. Max 5MB allowed.', 'error');
-                    document.getElementById(`file${slot}`).value = '';
-                    return;
-                }
-                
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     preview.innerHTML = `<img src="${e.target.result}">`;
@@ -939,7 +880,6 @@
             }
         }
 
-        // FIXED: Completely rewritten upload function with proper error boundaries
         window.uploadItem = async function(slot) {
             const fileInput = document.getElementById(`file${slot}`);
             const file = fileInput.files[0];
@@ -955,35 +895,15 @@
                 return;
             }
 
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                showToast('Please select a valid image file', 'error');
-                return;
-            }
-
             const btn = document.getElementById(`uploadBtn${slot}`);
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Uploading...';
 
-            let cloudinaryData = null;
-
             try {
-                // Step 1: Upload image to Cloudinary
-                console.log('Step 1: Uploading to Cloudinary...');
-                cloudinaryData = await uploadToCloudinary(file);
-                console.log('Cloudinary upload successful:', cloudinaryData);
-            } catch (cloudinaryError) {
-                console.error('Cloudinary upload failed:', cloudinaryError);
-                showToast('Image upload failed: ' + cloudinaryError.message, 'error');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-upload"></i> Upload Item';
-                return; // Stop here if image upload fails
-            }
-
-            try {
-                // Step 2: Add to Firestore (only if image upload succeeded)
-                console.log('Step 2: Saving to Firestore...');
+                // Upload to Cloudinary first
+                const cloudinaryData = await uploadToCloudinary(file);
                 
+                // Add to Firestore
                 const itemData = {
                     name: name,
                     price: parseFloat(price),
@@ -998,7 +918,6 @@
                 };
                 
                 await addDoc(collection(db, 'items'), itemData);
-                console.log('Firestore save successful');
                 
                 // Reset form
                 fileInput.value = '';
@@ -1014,10 +933,9 @@
                 
                 showToast('Item uploaded successfully!');
                 updateStats();
-            } catch (firestoreError) {
-                console.error('Firestore save failed:', firestoreError);
-                showToast('Item saved to cloud but database failed: ' + firestoreError.message, 'error');
-                // Note: Image is uploaded but Firestore failed. Could implement cleanup here.
+            } catch (error) {
+                console.error('Upload error:', error);
+                showToast('Upload failed: ' + error.message, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-upload"></i> Upload Item';
@@ -1037,6 +955,7 @@
                     allItems.push({ id: doc.id, ...doc.data() });
                 });
                 
+                // Update manage section if active
                 if (document.getElementById('manageSection').classList.contains('active')) {
                     renderItemsList();
                 }
@@ -1064,7 +983,7 @@
 
             container.innerHTML = allItems.map(item => `
                 <div class="item-card">
-                    <img src="${item.thumbnailUrl || item.imageUrl}" alt="${item.name}" loading="lazy" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                    <img src="${item.thumbnailUrl || item.imageUrl}" alt="${item.name}" loading="lazy">
                     <div class="item-info">
                         <div class="item-name">${item.name}</div>
                         <div class="item-price">₦${item.price?.toLocaleString() || '0'}</div>
@@ -1091,12 +1010,15 @@
             if (!confirm('Are you sure you want to delete this item?')) return;
             
             try {
+                // Delete from Firestore
                 await deleteDoc(doc(db, 'items', id));
                 
+                // Queue Cloudinary deletion
                 if (publicId) {
                     await deleteFromCloudinary(publicId);
                 }
                 
+                // Log deletion
                 await addDoc(collection(db, 'deletionLogs'), {
                     itemId: id,
                     itemName: allItems.find(i => i.id === id)?.name || 'Unknown',
@@ -1172,11 +1094,14 @@
         let purchasesUnsubscribe = null;
 
         function updateStats() {
+            // Items count
             document.getElementById('totalItems').textContent = allItems.length;
             
+            // Scheduled deletions count
             const scheduledCount = allItems.filter(i => i.scheduledDelete).length;
             document.getElementById('scheduledDeletes').textContent = scheduledCount;
             
+            // Update notifications
             updateNotifications();
         }
 
@@ -1184,6 +1109,7 @@
             const now = new Date();
             const today = now.toLocaleDateString();
             
+            // Today's Purchases
             const pList = document.getElementById('purchaseNotifs');
             
             if (purchasesUnsubscribe) purchasesUnsubscribe();
@@ -1217,6 +1143,7 @@
                 }
             });
 
+            // Scheduled Deletions (upcoming)
             const dList = document.getElementById('deleteNotifs');
             const upcomingDeletes = allItems.filter(i => {
                 if (!i.scheduledDelete) return false;
@@ -1240,7 +1167,9 @@
                 }).join('');
             }
 
+            // New Reviews (today)
             const rList = document.getElementById('reviewNotifs');
+            // This will be updated by the reviews listener
             const reviewCount = parseInt(document.getElementById('totalReviews').textContent || '0');
             document.getElementById('reviewBadge').textContent = reviewCount;
             
@@ -1261,12 +1190,15 @@
                 if (item.scheduledDelete) {
                     const deleteDate = item.scheduledDelete.toDate ? item.scheduledDelete.toDate() : new Date(item.scheduledDelete);
                     if (deleteDate <= now) {
+                        // Delete from Firestore
                         batch.delete(doc(db, 'items', item.id));
                         
+                        // Queue Cloudinary deletion
                         if (item.imagePublicId) {
                             await deleteFromCloudinary(item.imagePublicId);
                         }
                         
+                        // Log deletion
                         const logRef = doc(collection(db, 'deletionLogs'));
                         batch.set(logRef, {
                             itemId: item.id,
@@ -1302,9 +1234,13 @@
         const unsubscribeAuth = checkAuth();
         subscribeToItems();
         
+        // Check scheduled deletions every minute
         setInterval(checkScheduledDeletions, 60000);
+        
+        // Initial check
         setTimeout(checkScheduledDeletions, 2000);
         
+        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (itemsUnsubscribe) itemsUnsubscribe();
             if (reviewsUnsubscribe) reviewsUnsubscribe();
