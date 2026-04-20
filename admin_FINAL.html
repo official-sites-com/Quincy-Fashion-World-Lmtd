@@ -955,20 +955,20 @@
                     allItems.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // Update manage section if active
-                if (document.getElementById('manageSection').classList.contains('active')) {
-                    renderItemsList();
-                }
+                // Always render items when data updates (works across all tabs)
+                renderItemsList();
                 
                 updateStats();
                 checkScheduledDeletions();
             }, (error) => {
                 console.error('Items listener error:', error);
+                showToast('Error loading items: ' + error.message, 'error');
             });
         }
 
         function renderItemsList() {
             const container = document.getElementById('itemsList');
+            if (!container) return; // Safety check if container doesn't exist
             
             if (allItems.length === 0) {
                 container.innerHTML = `
@@ -1003,7 +1003,21 @@
         }
 
         window.loadItems = function() {
+            // Render immediately if data is already loaded
             renderItemsList();
+            // If no items yet, show loading state (listener will populate soon)
+            if (allItems.length === 0) {
+                const container = document.getElementById('itemsList');
+                if (container && container.children.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1;">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <h3>Loading items...</h3>
+                            <p>Please wait while we fetch your items</p>
+                        </div>
+                    `;
+                }
+            }
         }
 
         window.deleteItem = async function(id, publicId) {
